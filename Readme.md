@@ -12,10 +12,10 @@ Millions of people search for health information online before consulting a doct
 
 ### Key Challenges
 
-* Health misinformation spread through social media and unverified websites
-* Lack of healthcare information in regional languages
-* Overloaded healthcare systems due to preventable hospital visits
-* Limited access to trusted healthcare guidance in rural areas
+- Health misinformation spread through social media and unverified websites
+- Lack of healthcare information in regional languages
+- Overloaded healthcare systems due to preventable hospital visits
+- Limited access to trusted healthcare guidance in rural areas
 
 ---
 
@@ -23,12 +23,12 @@ Millions of people search for health information online before consulting a doct
 
 SwasthyaAI is an AI-powered public health assistant designed to provide:
 
-* Multilingual healthcare awareness
-* Symptom-based preliminary guidance
-* Hospital and clinic recommendations
-* Emergency symptom detection
-* Disease outbreak alerts
-* Rural-friendly healthcare accessibility
+- Multilingual healthcare awareness
+- Symptom-based preliminary guidance
+- Hospital and clinic recommendations
+- Emergency symptom detection
+- Disease outbreak alerts
+- Rural-friendly healthcare accessibility
 
 ---
 
@@ -49,48 +49,48 @@ SwasthyaAI is an AI-powered public health assistant designed to provide:
 
 Supports multiple Indian languages including:
 
-* English
-* Hindi
-* Marathi
-* Tamil
-* Telugu
-* Bengali
-* Gujarati
+- English
+- Hindi
+- Marathi
+- Tamil
+- Telugu
+- Bengali
+- Gujarati
 
 ### 🩺 AI Symptom Analysis
 
-* Intelligent symptom understanding
-* Context-aware triage
-* Risk categorization
+- Intelligent symptom understanding
+- Context-aware triage
+- Risk categorization
 
 ### 🏥 Hospital Finder
 
-* Nearby hospitals
-* Primary Health Centers (PHCs)
-* Emergency care facilities
-* Google Maps integration
+- Nearby hospitals
+- Primary Health Centers (PHCs)
+- Emergency care facilities
+- Google Maps integration
 
 ### 🚨 Emergency Detection
 
 Instant detection of:
 
-* Breathing difficulties
-* Chest pain
-* Severe fever
-* Stroke symptoms
-* Critical medical emergencies
+- Breathing difficulties
+- Chest pain
+- Severe fever
+- Stroke symptoms
+- Critical medical emergencies
 
 ### 📚 Disease Awareness
 
-* Verified healthcare information
-* Preventive healthcare guidance
-* Government health schemes awareness
+- Verified healthcare information
+- Preventive healthcare guidance
+- Government health schemes awareness
 
 ### 📢 Outbreak Alerts
 
-* Local disease outbreak notifications
-* Public health advisories
-* Regional disease monitoring
+- Local disease outbreak notifications
+- Public health advisories
+- Regional disease monitoring
 
 ---
 
@@ -100,9 +100,9 @@ Instant detection of:
 
 Instead of only giving recommendations, SwasthyaAI explains:
 
-* Why a symptom is concerning
-* Which symptoms contributed to the assessment
-* Recommended next steps
+- Why a symptom is concerning
+- Which symptoms contributed to the assessment
+- Recommended next steps
 
 ### 2. Regional Language Intelligence
 
@@ -112,18 +112,18 @@ Understands healthcare queries in local languages and dialects.
 
 Designed for:
 
-* Low bandwidth networks
-* Mobile-first usage
-* Rural healthcare environments
+- Low bandwidth networks
+- Mobile-first usage
+- Rural healthcare environments
 
 ### 4. Public Health Focus
 
 Unlike traditional symptom checkers, SwasthyaAI focuses on:
 
-* Awareness
-* Prevention
-* Early guidance
-* Healthcare accessibility
+- Awareness
+- Prevention
+- Early guidance
+- Healthcare accessibility
 
 ---
 
@@ -149,24 +149,24 @@ Outbreak Monitoring
 
 ### Frontend
 
-* React
-* Vite
-* Tailwind CSS
+- React
+- Vite
+- Tailwind CSS
 
 ### AI Layer
 
-* OpenAI API / Claude API
-* Prompt Engineering
-* Healthcare Knowledge Base
+- OpenAI API / Claude API
+- Prompt Engineering
+- Healthcare Knowledge Base
 
 ### Integrations
 
-* Google Maps API
-* Public Health APIs
+- Google Maps API
+- Public Health APIs
 
 ### Deployment
 
-* Vercel
+- Vercel
 
 ---
 
@@ -180,20 +180,20 @@ Outbreak Monitoring
 
 Possible Concern:
 
-* Respiratory infection
+- Respiratory infection
 
 Recommended Actions:
 
-* Rest and hydration
-* Monitor symptoms
+- Rest and hydration
+- Monitor symptoms
 
 Medical Recommendation:
 
-* Consult a healthcare professional
+- Consult a healthcare professional
 
 Nearby Facilities:
 
-* List of nearest hospitals and clinics
+- List of nearest hospitals and clinics
 
 ---
 
@@ -211,34 +211,34 @@ Direct consultation with healthcare professionals.
 
 Integration with:
 
-* Ayushman Bharat
-* State Health Portals
-* Public Health Programs
+- Ayushman Bharat
+- State Health Portals
+- Public Health Programs
 
 ### Offline Mode
 
-* SMS-based support
-* Cached health information
-* Rural connectivity optimization
+- SMS-based support
+- Cached health information
+- Rural connectivity optimization
 
 ---
 
 ## 📈 Impact
 
-* Improve healthcare awareness
-* Reduce misinformation
-* Encourage early medical consultation
-* Support underserved communities
-* Improve public health outcomes
+- Improve healthcare awareness
+- Reduce misinformation
+- Encourage early medical consultation
+- Support underserved communities
+- Improve public health outcomes
 
 ---
 
 ## 👥 Team CodeCare Innovators
 
-* Harsh Kale
-* Akshay Sonwane
-* Soumya Jagtap
-* Shambhavi Deshpande
+- Harsh Kale
+- Akshay Sonwane
+- Soumya Jagtap
+- Shambhavi Deshpande
 
 ---
 
