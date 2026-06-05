@@ -46,6 +46,7 @@ SwasthyaAI is an AI-powered public health assistant designed to provide:
 
 <img width="572" height="763" alt="image" src="https://github.com/user-attachments/assets/7e02be8a-d291-4e0c-865d-bcfaf483aa56" />
 
+Here Is Swasthy Ai Documention Link - https://swasthy-ai-documentation.netlify.app/
 
 ## ✨ Features
 
