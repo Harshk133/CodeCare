@@ -13,6 +13,7 @@
     "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/openai": "^3.0.68",
     "@google/genai": "^2.8.0",
+    "@humeai/voice-react": "^0.2.14",
     "@pinecone-database/pinecone": "^7.2.0",
     "@react-google-maps/api": "^2.20.8",
     "ai": "^6.0.197",
