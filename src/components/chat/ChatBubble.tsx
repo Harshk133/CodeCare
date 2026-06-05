@@ -5,12 +5,13 @@ import { Message, TriageResult } from "@/types";
 import {
   Volume2,
   VolumeX,
-  ShieldAlert,
   PhoneCall,
   Activity,
   AlertOctagon,
   Clock,
-  Compass,
+  Navigation,
+  MapPin,
+  Timer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -51,6 +52,14 @@ export function ChatBubble({
     }>;
   } | null = null;
 
+  let directionsData: {
+    hospitalName: string;
+    distance: string;
+    duration: string;
+    origin: { latitude: number; longitude: number };
+    destination: { latitude: number; longitude: number };
+  } | null = null;
+
   // Regex to extract triage, emergency, and hospital JSON tags
   try {
     const triageMatch = message.content.match(/<triage>([\s\S]*?)<\/triage>/);
@@ -67,6 +76,11 @@ export function ChatBubble({
     if (hospitalsMatch && hospitalsMatch[1]) {
       hospitalsData = JSON.parse(hospitalsMatch[1].trim());
     }
+
+    const directionsMatch = message.content.match(/<directions>([\s\S]*?)<\/directions>/);
+    if (directionsMatch && directionsMatch[1]) {
+      directionsData = JSON.parse(directionsMatch[1].trim());
+    }
   } catch (err) {
     console.warn("⚠️ Failed to parse embedded structured metadata in stream:", err);
   }
@@ -76,6 +90,7 @@ export function ChatBubble({
     .replace(/<triage>[\s\S]*?<\/triage>/gi, "")
     .replace(/<emergency>[\s\S]*?<\/emergency>/gi, "")
     .replace(/<hospitals>[\s\S]*?<\/hospitals>/gi, "")
+    .replace(/<directions>[\s\S]*?<\/directions>/gi, "")
     .trim();
 
   // Determine Triage color styles
@@ -211,6 +226,37 @@ export function ChatBubble({
               userLocation={hospitalsData.userLocation}
               hospitals={hospitalsData.hospitals}
             />
+          </div>
+        )}
+
+        {/* Renders Directions Summary Card if detected */}
+        {directionsData && (
+          <div className="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/10 p-4">
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-xs mb-3">
+              <Navigation className="h-4 w-4" />
+              <span>Route to {directionsData.hospitalName}</span>
+            </div>
+            <div className="flex gap-4 mb-3">
+              <div className="flex items-center gap-1.5 text-xs">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">Distance:</span>
+                <span className="font-bold text-foreground">{directionsData.distance}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                <Timer className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">ETA:</span>
+                <span className="font-bold text-foreground">{directionsData.duration}</span>
+              </div>
+            </div>
+            <a
+              href={`https://www.google.com/maps/dir/${directionsData.origin.latitude},${directionsData.origin.longitude}/${directionsData.destination.latitude},${directionsData.destination.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 text-[11px] font-bold transition-all hover:scale-105 active:scale-95"
+            >
+              <Navigation className="h-3.5 w-3.5" />
+              Open in Google Maps
+            </a>
           </div>
         )}
 
