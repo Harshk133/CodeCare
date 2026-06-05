@@ -1,0 +1,20 @@
+site_name: CodeCare Documentation
+site_description: AI-Driven Healthcare Accessibility Docs
+
+theme:
+  name: material
+
+nav:
+  - Home: SwasthyaAI_Project_Overview.md
+  - Cough Analysis: cough-analysis.md
+  - Disease Awareness: disease-awareness.md
+  - Emergency Detection: emergency-detection.md
+  - Explainable AI Dashboard: explainable-ai-dashboard.md
+  - Health Score: health-score.md
+  - Hospital Finder: hospital-finder.md
+  - Multilingual Support: multilingual-support.md
+  - Offline Gemma Chatbot: offline-gemma-chatbot.md
+  - Outbreak Alerts: outbreak-alerts.md
+  - Rural Accessibility: rural-accessibility.md
+  - Symptom Triage Engine: symptom-triage-engine.md
+  - System Architecture: system-architecture.md
