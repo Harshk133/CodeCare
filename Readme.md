@@ -21,7 +21,7 @@ Millions of people search for health information online before consulting a doct
 
 ## 💡 Our Solution
 
-SwasthyaAI is an AI-powered public health assistant designed to provide:
+SwasthyaAI is an AI-powered public health assistant designed to provide
 
 - Multilingual healthcare awareness
 - Symptom-based preliminary guidance
