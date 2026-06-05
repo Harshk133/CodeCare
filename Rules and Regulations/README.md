@@ -1,4 +1,5 @@
 # Rules-and-Regulation
+
 # AGTechathon 2k26
 
 ![AGTechathon Logo](./AGTECHATHON2.0.jpeg)
@@ -20,7 +21,7 @@ Welcome to the official repository for **AGTechathon 2k26**! Please read the fol
 ### 2. No Full-Tutorial Videos
 
 - **Do not** use YouTube or other videos that provide a complete, step-by-step project tutorial.
-  
+
 ### 3. Frequent Code Pushes
 
 - Push your incremental code to the provided GitHub repository **at least every 1 hour 30 minutes**.
