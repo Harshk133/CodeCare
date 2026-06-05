@@ -21,7 +21,7 @@ Millions of people search for health information online before consulting a doct
 
 ## 💡 Our Solution
 
-SwasthyaAI is an AI-powered public health assistant designed to provide
+SwasthyaAI is an AI-powered public health assistant designed to provide:
 
 - Multilingual healthcare awareness
 - Symptom-based preliminary guidance
@@ -42,11 +42,6 @@ SwasthyaAI is an AI-powered public health assistant designed to provide
 | Problem Statement | AI-Driven Public Health Chatbot for Disease Awareness |
 
 ---
-## Architecture
-
-<img width="572" height="763" alt="image" src="https://github.com/user-attachments/assets/7e02be8a-d291-4e0c-865d-bcfaf483aa56" />
-
-Here Is Swasthy Ai Documention Link - https://swasthy-ai-documentation.netlify.app/
 
 ## ✨ Features
 
@@ -252,8 +247,6 @@ Integration with:
 SwasthyaAI does not replace licensed medical professionals.
 
 The platform is intended for healthcare awareness, early guidance, and educational purposes only. Users are encouraged to consult qualified healthcare providers for diagnosis and treatment.
-
-Right health guidance, at the right time, in the right language
 
 ---
 
