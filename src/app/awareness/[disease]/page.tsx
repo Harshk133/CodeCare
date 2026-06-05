@@ -15,7 +15,7 @@ export function generateStaticParams() {
 }
 
 interface DiseasePageProps {
-  params: Promise<{ disease: string }> | { disease: string };
+  params: Promise<{ disease: string }>;
 }
 
 export default async function DiseaseDetailPage({ params }: DiseasePageProps) {
