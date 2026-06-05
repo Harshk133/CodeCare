@@ -248,6 +248,8 @@ SwasthyaAI does not replace licensed medical professionals.
 
 The platform is intended for healthcare awareness, early guidance, and educational purposes only. Users are encouraged to consult qualified healthcare providers for diagnosis and treatment.
 
+Right health guidance, at the right time, in the right language
+
 ---
 
 ## 📄 License
