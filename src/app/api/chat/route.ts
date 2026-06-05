@@ -18,6 +18,7 @@ const MOCK_HOSPITALS = [
     phone: "+91 20 2567 8000",
     hasEmergency24_7: true,
     coordinates: { latitude: 18.5144, longitude: 73.8412 },
+    specialties: ["dengue", "malaria", "fever", "infectious diseases"],
   },
   {
     id: "hosp-2",
@@ -27,6 +28,7 @@ const MOCK_HOSPITALS = [
     phone: "+91 20 2447 3012",
     hasEmergency24_7: true,
     coordinates: { latitude: 18.5282, longitude: 73.8631 },
+    specialties: ["dengue", "malaria", "tuberculosis", "general medicine"],
   },
   {
     id: "hosp-3",
@@ -36,6 +38,7 @@ const MOCK_HOSPITALS = [
     phone: "+91 20 6645 5100",
     hasEmergency24_7: true,
     coordinates: { latitude: 18.5325, longitude: 73.8788 },
+    specialties: ["cardiology", "stroke", "emergency", "intensive care", "breathing distress"],
   },
   {
     id: "hosp-4",
@@ -45,6 +48,7 @@ const MOCK_HOSPITALS = [
     phone: "+91 20 2292 2011",
     hasEmergency24_7: false,
     coordinates: { latitude: 18.5085, longitude: 73.6195 },
+    specialties: ["fever", "malaria", "general medicine", "vaccination"],
   },
   {
     id: "hosp-5",
@@ -54,6 +58,7 @@ const MOCK_HOSPITALS = [
     phone: "+91 33 2241 4901",
     hasEmergency24_7: true,
     coordinates: { latitude: 22.5746, longitude: 88.3639 },
+    specialties: ["dengue", "malaria", "infectious diseases", "general medicine"],
   },
 ];
 
@@ -160,9 +165,30 @@ CRITICAL RULES:
        "immediateActions": ["Action 1", "Action 2"]
      }
      </emergency>
+   - For hospital recommendations or searches (especially when calling getNearbyHospitals), you MUST output a <hospitals> JSON block like:
+     <hospitals>
+     {
+       "userLocation": { "latitude": 18.5204, "longitude": 73.8567 },
+       "hospitals": [
+         {
+           "name": "Hospital Name",
+           "distance": 1.2,
+           "address": "Address details",
+           "phone": "Phone number",
+           "coordinates": { "latitude": 18.5144, "longitude": 73.8412 },
+           "specialties": ["dengue", "malaria"],
+           "hasEmergency24_7": true
+         }
+       ]
+     }
+     </hospitals>
 
 Here is the retrieved medical context to ground your answer:
 ${medicalContext}
+
+User coordinates (MUST use these when calling getNearbyHospitals):
+Latitude: ${userLocation?.latitude ?? "undefined"}
+Longitude: ${userLocation?.longitude ?? "undefined"}
 
 Provide your guidance in a structured, clean markdown format. Keep it concise for mobile displays.`;
 
@@ -184,25 +210,50 @@ Provide your guidance in a structured, clean markdown format. Keep it concise fo
           },
         } as any),
         getNearbyHospitals: tool({
-          description: "Locate nearby hospitals and Primary Health Centers (PHCs)",
+          description: "Locate nearby hospitals and Primary Health Centers (PHCs) specializing in a disease",
           parameters: z.object({
-            latitude: z.number().describe("User latitude"),
-            longitude: z.number().describe("User longitude"),
+            latitude: z.number().optional().describe("User latitude"),
+            longitude: z.number().optional().describe("User longitude"),
             emergencyOnly: z.boolean().optional().describe("Filter for 24/7 emergency care"),
+            diseaseId: z.string().optional().describe("Filter/prioritize by disease specialty (e.g. dengue, malaria, tuberculosis, stroke)"),
           }),
-          execute: async ({ latitude, longitude, emergencyOnly }: any): Promise<any> => {
-            console.log(`🔧 [API Route Tool] Tool 'getNearbyHospitals' called at: [${latitude}, ${longitude}]`);
-            // Simulate distance calculation
+          execute: async ({ latitude, longitude, emergencyOnly, diseaseId }: any): Promise<any> => {
+            // Fallback safeguards for latitude and longitude
+            const lat = (typeof latitude === "number" && !isNaN(latitude)) ? latitude : (userLocation?.latitude || 18.5204);
+            const lng = (typeof longitude === "number" && !isNaN(longitude)) ? longitude : (userLocation?.longitude || 73.8567);
+            
+            // Fallback safeguard for diseaseId based on query if not specified
+            const activeDiseaseId = diseaseId || (userQuery.toLowerCase().includes("dengue") ? "dengue" : userQuery.toLowerCase().includes("malaria") ? "malaria" : userQuery.toLowerCase().includes("tuberculosis") ? "tuberculosis" : "");
+
+            console.log(`🔧 [API Route Tool] Tool 'getNearbyHospitals' called at: [${latitude}, ${longitude}] -> Resolved to: [${lat}, ${lng}], specialty: ${activeDiseaseId || "none"}`);
+            
+            // Calculate distance and check specialty match
             const hospitals = MOCK_HOSPITALS.map((h) => {
-              // Calculate a simple simulated distance based on mock coordinates
               const dist = Math.sqrt(
-                Math.pow(h.coordinates.latitude - latitude, 2) +
-                Math.pow(h.coordinates.longitude - longitude, 2)
+                Math.pow(h.coordinates.latitude - lat, 2) +
+                Math.pow(h.coordinates.longitude - lng, 2)
               ) * 111; // 1 degree lat is ~111km
-              return { ...h, distance: parseFloat(dist.toFixed(1)) };
-            }).sort((a, b) => a.distance - b.distance);
+              
+              const matchesSpecialty = activeDiseaseId
+                ? h.specialties.some((s) => s.toLowerCase().includes(activeDiseaseId.toLowerCase()))
+                : false;
+
+              return { 
+                ...h, 
+                distance: parseFloat(dist.toFixed(1)), 
+                matchesSpecialty 
+              };
+            });
 
             const filtered = emergencyOnly ? hospitals.filter((h) => h.hasEmergency24_7) : hospitals;
+            
+            // Sort matching specialty first, then by closest distance
+            filtered.sort((a, b) => {
+              if (a.matchesSpecialty && !b.matchesSpecialty) return -1;
+              if (!a.matchesSpecialty && b.matchesSpecialty) return 1;
+              return a.distance - b.distance;
+            });
+
             return { success: true, hospitals: filtered.slice(0, 3) };
           },
         } as any),
@@ -241,11 +292,54 @@ function handleSimulatedStream(userQuery: string, userLocation: any, context: st
   let responseText = "";
   let triageMetadata = "";
   let emergencyMetadata = "";
+  let hospitalsMetadata = "";
 
   // Emergency triggers detection
   const isChestPain = query.includes("chest pain") || query.includes("heart attack") || query.includes("radiating pain");
   const isStroke = query.includes("stroke") || query.includes("numbness") || query.includes("slurred speech") || query.includes("droop");
   const isBreathing = query.includes("breathing") || query.includes("breath") || query.includes("gasp") || query.includes("suffocat") || query.includes("oxygen");
+
+  // Determine specialty target based on user query
+  let targetSpecialty = "";
+  if (query.includes("dengue")) targetSpecialty = "dengue";
+  else if (query.includes("malaria")) targetSpecialty = "malaria";
+  else if (isChestPain || isStroke || isBreathing) targetSpecialty = "emergency";
+  else if (query.includes("fever") || query.includes("pain")) targetSpecialty = "fever";
+
+  if (targetSpecialty) {
+    const lat = userLocation?.latitude || 18.5204;
+    const lng = userLocation?.longitude || 73.8567;
+    const matched = MOCK_HOSPITALS.map((h) => {
+      const dist = Math.sqrt(
+        Math.pow(h.coordinates.latitude - lat, 2) +
+        Math.pow(h.coordinates.longitude - lng, 2)
+      ) * 111;
+      const matchesSpecialty = h.specialties.some(s => s.toLowerCase().includes(targetSpecialty.toLowerCase()));
+      return {
+        name: h.name,
+        distance: parseFloat(dist.toFixed(1)),
+        address: h.address,
+        phone: h.phone,
+        coordinates: h.coordinates,
+        specialties: h.specialties,
+        hasEmergency24_7: h.hasEmergency24_7,
+        matchesSpecialty
+      };
+    }).sort((a, b) => {
+      if (a.matchesSpecialty && !b.matchesSpecialty) return -1;
+      if (!a.matchesSpecialty && b.matchesSpecialty) return 1;
+      return a.distance - b.distance;
+    }).slice(0, 2);
+
+    hospitalsMetadata = `
+<hospitals>
+{
+  "userLocation": { "latitude": ${lat}, "longitude": ${lng} },
+  "hospitals": ${JSON.stringify(matched)}
+}
+</hospitals>
+`;
+  }
 
   if (isChestPain || isStroke || isBreathing) {
     console.log("🚨 [API Route Simulation] Emergency scenario detected.");
@@ -395,7 +489,7 @@ Thank you for reaching out. Based on your query, we recommend standard supportiv
   }
 
   // Combine content stream
-  const fullPayload = `${triageMetadata}${emergencyMetadata}${responseText}`;
+  const fullPayload = `${triageMetadata}${emergencyMetadata}${hospitalsMetadata}${responseText}`;
 
   // Stream text response with standard ReadableStream
   const encoder = new TextEncoder();

@@ -13,6 +13,11 @@ import {
   Compass,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const HospitalMap = dynamic(() => import("./HospitalMap"), {
+  ssr: false,
+});
 
 interface ChatBubbleProps {
   message: Message;
@@ -32,8 +37,21 @@ export function ChatBubble({
   // State to track if metadata parsing succeeded
   let triageData: TriageResult | null = null;
   let emergencyData: { symptom: string; immediateActions: string[] } | null = null;
+  let hospitalsData: {
+    userLocation: { latitude: number; longitude: number };
+    hospitals: Array<{
+      name: string;
+      distance: number;
+      address: string;
+      phone: string;
+      coordinates: { latitude: number; longitude: number };
+      specialties: string[];
+      hasEmergency24_7: boolean;
+      matchesSpecialty?: boolean;
+    }>;
+  } | null = null;
 
-  // Regex to extract triage and emergency JSON tags
+  // Regex to extract triage, emergency, and hospital JSON tags
   try {
     const triageMatch = message.content.match(/<triage>([\s\S]*?)<\/triage>/);
     if (triageMatch && triageMatch[1]) {
@@ -44,6 +62,11 @@ export function ChatBubble({
     if (emergencyMatch && emergencyMatch[1]) {
       emergencyData = JSON.parse(emergencyMatch[1].trim());
     }
+
+    const hospitalsMatch = message.content.match(/<hospitals>([\s\S]*?)<\/hospitals>/);
+    if (hospitalsMatch && hospitalsMatch[1]) {
+      hospitalsData = JSON.parse(hospitalsMatch[1].trim());
+    }
   } catch (err) {
     console.warn("⚠️ Failed to parse embedded structured metadata in stream:", err);
   }
@@ -52,6 +75,7 @@ export function ChatBubble({
   const cleanContent = message.content
     .replace(/<triage>[\s\S]*?<\/triage>/gi, "")
     .replace(/<emergency>[\s\S]*?<\/emergency>/gi, "")
+    .replace(/<hospitals>[\s\S]*?<\/hospitals>/gi, "")
     .trim();
 
   // Determine Triage color styles
@@ -177,6 +201,16 @@ export function ChatBubble({
                 </span>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Renders Hospital Route Map Card if detected */}
+        {hospitalsData && (
+          <div className="mb-4">
+            <HospitalMap
+              userLocation={hospitalsData.userLocation}
+              hospitals={hospitalsData.hospitals}
+            />
           </div>
         )}
 
