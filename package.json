@@ -1,17 +1,42 @@
 {
+  "name": "swasthya-ai",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "format": "prettier --write ."
   },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.1",
+    "tailwind-merge": "^2.5.5",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.1",
+    "zustand": "^5.0.2"
+  },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^9.39.4",
+    "@eslint/js": "^9.16.0",
+    "@types/node": "^22.10.1",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "^15.1.0",
     "eslint-plugin-react": "^7.37.5",
     "globals": "^17.6.0",
-    "jiti": "^2.7.0",
-    "prettier": "^3.8.3",
+    "postcss": "^8.4.49",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
     "typescript-eslint": "^8.60.1"
-  },
-  "dependencies": {
-    "pnpm": "^11.5.2"
   }
 }

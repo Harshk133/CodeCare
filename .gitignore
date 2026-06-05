@@ -2,6 +2,10 @@
 
 node_modules/
 
+# nextjs
+/.next
+/out
+
 # Build output
 
 dist/
