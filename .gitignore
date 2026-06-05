@@ -5,6 +5,8 @@ node_modules/
 # nextjs
 /.next
 /out
+.next
+out
 
 # Build output
 
