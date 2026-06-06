@@ -10,6 +10,14 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.80",
+    "@ai-sdk/hume": "^2.0.33",
+    "@ai-sdk/openai": "^3.0.68",
+    "@google/genai": "^2.8.0",
+    "@humeai/voice-react": "^0.2.14",
+    "@pinecone-database/pinecone": "^7.2.0",
+    "@react-google-maps/api": "^2.20.8",
+    "ai": "^6.0.197",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",

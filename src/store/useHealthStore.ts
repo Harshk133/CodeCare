@@ -2,18 +2,22 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { LanguageCode, Coordinates, Message, OutbreakAlert } from "@/types";
 
+export type VoiceName = "Suresh" | "Priya" | "Arjun";
+
 interface HealthState {
   language: LanguageCode;
   userLocation: Coordinates | null;
   messages: Message[];
   activeAlerts: OutbreakAlert[];
   theme: "light" | "dark";
+  preferredVoice: VoiceName;
   setLanguage: (lang: LanguageCode) => void;
   setUserLocation: (loc: Coordinates | null) => void;
   addMessage: (msg: Message) => void;
   clearChat: () => void;
   setActiveAlerts: (alerts: OutbreakAlert[]) => void;
   toggleTheme: () => void;
+  setPreferredVoice: (voice: VoiceName) => void;
 }
 
 export const useHealthStore = create<HealthState>()(
@@ -24,6 +28,7 @@ export const useHealthStore = create<HealthState>()(
       messages: [],
       activeAlerts: [],
       theme: "light",
+      preferredVoice: "Priya",
       setLanguage: (language) => set({ language }),
       setUserLocation: (userLocation) => set({ userLocation }),
       addMessage: (message) =>
@@ -34,15 +39,16 @@ export const useHealthStore = create<HealthState>()(
         set((state) => ({
           theme: state.theme === "light" ? "dark" : "light",
         })),
+      setPreferredVoice: (preferredVoice) => set({ preferredVoice }),
     }),
     {
       name: "swasthya-ai-store",
-      // Only persist configuration fields and history
       partialize: (state) => ({
         language: state.language,
         userLocation: state.userLocation,
         messages: state.messages,
         theme: state.theme,
+        preferredVoice: state.preferredVoice,
       }),
     }
   )
