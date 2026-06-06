@@ -17,14 +17,21 @@ export const metadata: Metadata = {
   title: "SwasthyaAI - Multilingual AI Public Health Assistant",
   description:
     "AI-powered multilingual health assistant for symptom triage, hospital finder, emergency detection, disease awareness, and outbreak notifications.",
+  // Mobile web app manifest hints
+  other: {
+    "mobile-web-app-capable":       "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false, // Prevents user scaling for a native app feel in mobile builds
-  viewportFit: "cover", // Utilizes modern mobile screen notches
+  userScalable: false,
+  viewportFit: "cover", // extends into notch / dynamic island area on iOS
+  themeColor: "#0d9488",
 };
 
 export default function RootLayout({
@@ -38,7 +45,15 @@ export default function RootLayout({
       className={`${inter.variable} ${outfit.variable}`}
       suppressHydrationWarning
     >
-      <body className="bg-background font-sans text-foreground antialiased selection:bg-primary selection:text-white">
+      <body
+        className="bg-background font-sans text-foreground antialiased selection:bg-primary selection:text-white"
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          paddingLeft: "env(safe-area-inset-left)",
+          paddingRight: "env(safe-area-inset-right)",
+        }}
+      >
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

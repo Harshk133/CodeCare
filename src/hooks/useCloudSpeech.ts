@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { LanguageCode } from "@/types";
+import { getApiUrl } from "@/lib/getApiUrl";
 
 interface SpeakOptions {
   voice?: string;
   tone?: "calm" | "empathetic" | "reassuring" | "urgent";
   language?: string;
+  onEnd?: () => void;
 }
 
 // ─── Voice / tone / language descriptors sent to Hume as the "description" field ─
@@ -29,6 +31,36 @@ const LANG_LABELS: Record<string, string> = {
   ta: "Tamil",   te: "Telugu", bn: "Bengali", gu: "Gujarati",
 };
 
+// Build explicit language-aware description for Hume.
+// For Hindi we must be very forceful — without this Hume drifts into Japanese or Urdu
+// because short Hindi syllables ("hai", "kya", "hu") resemble Japanese phonetics.
+function buildHumeDescription(voice: string, tone: string, language: string): string {
+  const persona   = VOICE_PERSONAS[voice]  ?? VOICE_PERSONAS.Priya;
+  const toneStyle = TONE_STYLES[tone]      ?? TONE_STYLES.calm;
+  const langLabel = LANG_LABELS[language]  ?? "English";
+
+  if (language === "hi" || language === "mr") {
+    return (
+      `LANGUAGE INSTRUCTION (MANDATORY): You MUST speak EXCLUSIVELY in Hindi (हिन्दी). ` +
+      `This text is written in Hindi language. Use authentic Hindustani pronunciation as spoken in India. ` +
+      `ABSOLUTELY DO NOT speak in Japanese, English, Urdu, Arabic, Chinese, or any other language. ` +
+      `Every single word must be pronounced in Hindi. ` +
+      `Voice character: ${persona}. Delivery: ${toneStyle}`
+    );
+  }
+
+  if (language !== "en") {
+    return (
+      `LANGUAGE INSTRUCTION: Speak ONLY in ${langLabel}. ` +
+      `This text is in ${langLabel}. Use native ${langLabel} pronunciation. ` +
+      `Do NOT switch to English or any other language. ` +
+      `Voice character: ${persona}. Delivery: ${toneStyle}`
+    );
+  }
+
+  return `${persona}. ${toneStyle}`;
+}
+
 // The Hume voice ID to use for all speech synthesis.
 const HUME_VOICE_ID = "f795ee0c-fc67-44e7-bf99-306c97bb1457";
 const HUME_API_URL  = "https://api.hume.ai/v0/tts/file";
@@ -44,6 +76,33 @@ function cleanText(text: string): string {
     .replace(/[#*`_]/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+// For Hindi/Marathi TTS: remove any Arabic/Urdu script characters that the LLM
+// accidentally emits, then normalise punctuation to Devanagari conventions.
+// This is the last safety net before the text reaches Hume.
+function sanitizeDevanagari(text: string): string {
+  // Strip entire Arabic/Urdu Unicode block (U+0600–U+06FF) and extended Arabic (U+0750–U+077F, U+FB50–U+FDFF, U+FE70–U+FEFF)
+  let out = text
+    .replace(/[؀-ۿ]/g, "")
+    .replace(/[ݐ-ݿ]/g, "")
+    .replace(/[ﭐ-﷿]/g, "")
+    .replace(/[ﹰ-﻿]/g, "");
+
+  // Convert ASCII period at sentence boundary → Devanagari danda "।"
+  // Match period followed by space/newline/end-of-string (avoid decimals like 1.5)
+  out = out.replace(/\.(\s|$)/g, "।$1");
+
+  // Convert ASCII exclamation → keep as-is (understandable in Hindi TTS)
+  // Convert ASCII question mark → keep as-is
+
+  // Collapse multiple dandas / spaces
+  out = out.replace(/।{2,}/g, "।").replace(/\s{2,}/g, " ").trim();
+
+  // Ensure the text ends with a danda if it ends with Devanagari and no punctuation
+  if (out && /[ऀ-ॿ]$/.test(out)) out += "।";
+
+  return out;
 }
 
 export function useCloudSpeech() {
@@ -124,7 +183,7 @@ export function useCloudSpeech() {
       const formData = new FormData();
       formData.append("file", audioBlob, "audio.webm");
 
-      const res  = await fetch("/api/voice/transcribe", { method: "POST", body: formData });
+      const res  = await fetch(getApiUrl("/api/voice/transcribe"), { method: "POST", body: formData });
       const data = await res.json();
 
       if (!res.ok || data.error) throw new Error(data.error || `Server error: ${res.status}`);
@@ -147,10 +206,20 @@ export function useCloudSpeech() {
     stopSpeaking();
     setError(null);
 
-    // Server-side test override isn't accessible here (NEXT_PUBLIC_ vars are inlined at build time)
+    // Destructure options first so language is available for sanitization below
+    const voice    = options.voice    || "Priya";
+    const tone     = options.tone     || "calm";
+    const language = options.language || "en";
+
     const testPhrase = process.env.NEXT_PUBLIC_HUME_TEST_TEXT;
     const rawText    = testPhrase || text;
-    const cleanedText = cleanText(rawText);
+    let   cleanedText = cleanText(rawText);
+
+    // For Hindi/Marathi: strip any Urdu/Arabic characters the LLM emitted and
+    // normalise punctuation to Devanagari danda "।" before sending to Hume.
+    if (language === "hi" || language === "mr") {
+      cleanedText = sanitizeDevanagari(cleanedText);
+    }
 
     if (!cleanedText) {
       console.warn("🔊 [CloudSpeech] speakText — no text to speak, skipping.");
@@ -163,19 +232,11 @@ export function useCloudSpeech() {
       return;
     }
 
-    const voice    = options.voice    || "Priya";
-    const tone     = options.tone     || "calm";
-    const language = options.language || "en";
-    const langLabel = LANG_LABELS[language] || "English";
+    const description = buildHumeDescription(voice, tone, language);
 
-    const langGuide = language !== "en"
-      ? ` The text is in ${langLabel} — pronounce every word naturally as a fluent native ${langLabel} speaker, preserving the language throughout.`
-      : "";
-
-    const description = `${VOICE_PERSONAS[voice] ?? VOICE_PERSONAS.Priya}. ${TONE_STYLES[tone] ?? TONE_STYLES.calm}${langGuide}`;
-
-    console.log(`🔊 [CloudSpeech] Hume TTS → voice:${voice} (ID:${HUME_VOICE_ID}) tone:${tone} lang:${language} chars:${cleanedText.length}`);
+    console.log(`🔊 [CloudSpeech] Hume TTS → voice:${voice} tone:${tone} lang:${language} chars:${cleanedText.length}`);
     if (testPhrase) console.log(`🧪 [CloudSpeech] TEST PHRASE active: "${testPhrase}"`);
+    console.log(`🔊 [CloudSpeech] Hume description: "${description.slice(0, 120)}…"`);
 
     setIsSpeaking(true);
 
@@ -219,6 +280,7 @@ export function useCloudSpeech() {
         console.log("⏹️ [CloudSpeech] playback ended");
         setIsSpeaking(false);
         URL.revokeObjectURL(audioUrl);
+        options.onEnd?.();
       };
       audio.onerror = (e) => {
         console.error("❌ [CloudSpeech] playback error:", e);
