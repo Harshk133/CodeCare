@@ -6,7 +6,7 @@ import { LanguageCode } from "@/types";
 // Map our language codes to speech synthesis BCP-47 locales
 const SPEECH_LANG_MAP: Record<LanguageCode, string> = {
   en: "en-US",
-  hi: "in-IN", // Hindi (India)
+  hi: "hi-IN", // Hindi (India)
   mr: "mr-IN", // Marathi (India)
   ta: "ta-IN", // Tamil (India)
   te: "te-IN", // Telugu (India)
@@ -85,10 +85,9 @@ export function useSpeech(langCode: LanguageCode = "en") {
   };
 
   // Text-To-Speech (TTS)
-  const speakText = (text: string) => {
+  const speakText = (text: string, options?: { onEnd?: () => void }) => {
     if (typeof window === "undefined") return;
 
-    // Stop existing synthesis
     window.speechSynthesis.cancel();
 
     if (!text) return;
@@ -111,6 +110,7 @@ export function useSpeech(langCode: LanguageCode = "en") {
     utterance.onend = () => {
       setIsSpeaking(false);
       console.log("🔊 [Speech Synthesis] Playback finished.");
+      options?.onEnd?.();
     };
 
     utterance.onerror = (e) => {

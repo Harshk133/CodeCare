@@ -120,8 +120,31 @@ export async function POST(req: Request) {
       modelInstance = google("gemini-2.0-flash");
     }
 
-    const langInstruction = language && language !== "en"
-      ? `\nIMPORTANT: The user's detected language is "${language}". Respond entirely in that language. Never switch to English unless the user explicitly requests it.`
+    const langInstruction = language === "hi" || language === "mr"
+      ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MANDATORY SCRIPT RULE — देवनागरी लिपि (DEVANAGARI ONLY)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You MUST write your entire response in DEVANAGARI script — the script used for Hindi and Marathi in India.
+
+✅ CORRECT Devanagari example:
+"आपको बुखार है। पानी पीते रहें। पैरासिटामोल ले सकते हैं।
+अस्वीकरण: मैं एक AI सहायक हूँ, डॉक्टर नहीं।"
+
+❌ STRICTLY FORBIDDEN — Urdu/Arabic script (do NOT use these characters):
+ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ہ ی
+
+❌ STRICTLY FORBIDDEN — Roman/English script in the prose text.
+
+RULES:
+• Use ONLY Devanagari Unicode characters (U+0900–U+097F) for all prose text.
+• End every sentence with the Devanagari danda "।" — NOT a period ".".
+• The JSON inside <triage>, <emergency>, <hospitals>, <directions> tags may remain in English/ASCII — only the prose text outside tags must be Devanagari.
+• Medical terms (dengue, malaria, paracetamol) should be written in Devanagari phonetics: डेंगू, मलेरिया, पैरासिटामोल।
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+      : language && language !== "en"
+      ? `\nIMPORTANT: Respond entirely in ${language}. Do not use English.`
       : "";
 
     const systemPrompt = `You are SwasthyaAI, a multilingual public health assistant for Indian users.

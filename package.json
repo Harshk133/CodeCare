@@ -7,12 +7,23 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "mobile:build": "next build && npx cap sync android",
+    "mobile:android": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1",
+    "mobile:android:device": "powershell -ExecutionPolicy Bypass -File scripts/build-android.ps1 -Device",
+    "mobile:sync": "npx cap sync android",
+    "mobile:open": "npx cap open android"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/hume": "^2.0.33",
     "@ai-sdk/openai": "^3.0.68",
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/geolocation": "^8.2.0",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@google/genai": "^2.8.0",
     "@humeai/voice-react": "^0.2.14",
     "@pinecone-database/pinecone": "^7.2.0",
@@ -32,6 +43,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.0",
     "@eslint/js": "^9.16.0",
     "@types/node": "^22.10.1",
     "@types/react": "^19.0.1",

@@ -5,6 +5,8 @@ import { AppShell } from "@/components/shared/AppShell";
 import dynamic from "next/dynamic";
 import { Coordinates } from "@/types";
 import { Compass, MapPin, Sparkles, Loader2 } from "lucide-react";
+import { getApiUrl } from "@/lib/getApiUrl";
+import { useNativeGeolocation } from "@/hooks/useNativeBridge";
 
 const HospitalMap = dynamic(() => import("@/components/chat/HospitalMap"), { ssr: false });
 
@@ -36,7 +38,7 @@ export default function HospitalsClient() {
     console.log(`🏥 [HospitalsClient] Fetching hospitals near [${coords.latitude}, ${coords.longitude}]`);
 
     try {
-      const res = await fetch("/api/hospitals", {
+      const res = await fetch(getApiUrl("/api/hospitals"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude: coords.latitude, longitude: coords.longitude, radius: 5000 }),
@@ -56,31 +58,22 @@ export default function HospitalsClient() {
     }
   }, []);
 
-  const geolocate = useCallback(() => {
-    if (typeof window === "undefined" || !navigator.geolocation) {
-      setGpsError("Geolocation is not supported by this device.");
-      return;
-    }
+  const { requestLocation } = useNativeGeolocation();
 
+  const geolocate = useCallback(async () => {
     setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
-        setUserLocation(coords);
-        setGpsError(null);
-        setIsLocating(false);
-        fetchHospitals(coords);
-      },
-      (err) => {
-        console.warn("⚠️ [Hospitals] Geolocation failed:", err.message);
-        setGpsError("GPS denied. Using Pune Deccan Gymkhana as center.");
-        setUserLocation(PUNE_FALLBACK);
-        setIsLocating(false);
-        fetchHospitals(PUNE_FALLBACK);
-      },
-      { timeout: 6000 }
-    );
-  }, [fetchHospitals]);
+    const coords = await requestLocation();
+    setIsLocating(false);
+    if (coords) {
+      setUserLocation(coords);
+      setGpsError(null);
+      fetchHospitals(coords);
+    } else {
+      setGpsError("GPS denied. Using Pune Deccan Gymkhana as center.");
+      setUserLocation(PUNE_FALLBACK);
+      fetchHospitals(PUNE_FALLBACK);
+    }
+  }, [fetchHospitals, requestLocation]);
 
   useEffect(() => {
     geolocate();
