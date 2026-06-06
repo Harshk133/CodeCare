@@ -7,6 +7,7 @@ import { Coordinates } from "@/types";
 import { Compass, MapPin, Sparkles, Loader2 } from "lucide-react";
 import { getApiUrl } from "@/lib/getApiUrl";
 import { useNativeGeolocation } from "@/hooks/useNativeBridge";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const HospitalMap = dynamic(() => import("@/components/chat/HospitalMap"), { ssr: false });
 
@@ -32,6 +33,8 @@ export default function HospitalsClient() {
   const [isLocating, setIsLocating] = useState(false);
   const [isFetchingHospitals, setIsFetchingHospitals] = useState(false);
   const [dataSource, setDataSource] = useState<string>("loading");
+
+  const { t } = useTranslation();
 
   const fetchHospitals = useCallback(async (coords: Coordinates) => {
     setIsFetchingHospitals(true);
@@ -88,13 +91,13 @@ export default function HospitalsClient() {
             <div className="space-y-1">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-teal-500/15 px-2.5 py-0.5 text-[10px] font-bold text-teal-600 dark:text-teal-400 mb-2">
                 <Sparkles className="h-3 w-3" />
-                <span>Specialized Medical Directory</span>
+                <span>{t("hospital_badge")}</span>
               </div>
-              <h1 className="font-heading text-2xl font-bold tracking-tight">Specialized Hospital Finder</h1>
+              <h1 className="font-heading text-2xl font-bold tracking-tight">{t("hospital_title")}</h1>
               <p className="text-xs text-muted-foreground max-w-md">
-                Locate clinics, primary health centers (PHCs), and emergency rooms near you.
+                {t("hospital_desc")}
                 {dataSource === "google_places" && (
-                  <span className="ml-1 text-teal-600 dark:text-teal-400 font-semibold">Live data via Google Places.</span>
+                  <span className="ml-1 text-teal-600 dark:text-teal-400 font-semibold">{t("hospital_live")}</span>
                 )}
               </p>
             </div>
@@ -104,11 +107,11 @@ export default function HospitalsClient() {
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:bg-teal-600/50 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-md shadow-teal-500/10 active:scale-95"
             >
               {isLocating ? (
-                <><Compass className="h-4 w-4 animate-spin shrink-0" /><span>Geolocating...</span></>
+                <><Compass className="h-4 w-4 animate-spin shrink-0" /><span>{t("hospital_geolocating")}</span></>
               ) : isFetchingHospitals ? (
-                <><Loader2 className="h-4 w-4 animate-spin shrink-0" /><span>Loading...</span></>
+                <><Loader2 className="h-4 w-4 animate-spin shrink-0" /><span>{t("hospital_loading")}</span></>
               ) : (
-                <><MapPin className="h-4 w-4 shrink-0" /><span>Recenter Location</span></>
+                <><MapPin className="h-4 w-4 shrink-0" /><span>{t("hospital_recenter")}</span></>
               )}
             </button>
           </div>
@@ -126,7 +129,7 @@ export default function HospitalsClient() {
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 px-1">
               <MapPin className="h-4 w-4 text-teal-600" />
-              <span>Interactive Care Map & Routes</span>
+              <span>{t("hospital_map_title")}</span>
             </h3>
             <HospitalMap userLocation={userLocation} hospitals={hospitals} />
           </div>
@@ -136,14 +139,14 @@ export default function HospitalsClient() {
         {isFetchingHospitals && (
           <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="text-sm font-medium">Searching for hospitals near you...</span>
+            <span className="text-sm font-medium">{t("hospital_searching")}</span>
           </div>
         )}
 
         {/* Empty state */}
         {!isFetchingHospitals && hospitals.length === 0 && dataSource === "error" && (
           <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
-            <span className="text-sm">Could not load hospital data. Try recentering your location.</span>
+            <span className="text-sm">{t("hospital_error")}</span>
           </div>
         )}
       </div>

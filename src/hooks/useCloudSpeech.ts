@@ -215,9 +215,23 @@ export function useCloudSpeech() {
     const rawText    = testPhrase || text;
     let   cleanedText = cleanText(rawText);
 
-    // For Hindi/Marathi: strip any Urdu/Arabic characters the LLM emitted and
-    // normalise punctuation to Devanagari danda "।" before sending to Hume.
-    if (language === "hi" || language === "mr") {
+    // Auto-detect the actual script in the text so Hume always gets the right
+    // language instruction — guards against stale "en" being passed by callers
+    // when the Zustand language state hasn't updated yet (stale closure in ChatClient).
+    const hasDevanagari = /[ऀ-ॿ]/.test(cleanedText);
+    const hasTamil      = /[஀-௿]/.test(cleanedText);
+    const hasTelugu     = /[ఀ-౿]/.test(cleanedText);
+    const hasBengali    = /[ঀ-৿]/.test(cleanedText);
+    const hasGujarati   = /[઀-૿]/.test(cleanedText);
+    const effectiveLang =
+      hasDevanagari ? "hi" :
+      hasTamil      ? "ta" :
+      hasTelugu     ? "te" :
+      hasBengali    ? "bn" :
+      hasGujarati   ? "gu" :
+      language;
+
+    if (effectiveLang === "hi" || effectiveLang === "mr") {
       cleanedText = sanitizeDevanagari(cleanedText);
     }
 
@@ -232,9 +246,9 @@ export function useCloudSpeech() {
       return;
     }
 
-    const description = buildHumeDescription(voice, tone, language);
+    const description = buildHumeDescription(voice, tone, effectiveLang);
 
-    console.log(`🔊 [CloudSpeech] Hume TTS → voice:${voice} tone:${tone} lang:${language} chars:${cleanedText.length}`);
+    console.log(`🔊 [CloudSpeech] Hume TTS → voice:${voice} tone:${tone} lang:${effectiveLang} (passed:${language}) chars:${cleanedText.length}`);
     if (testPhrase) console.log(`🧪 [CloudSpeech] TEST PHRASE active: "${testPhrase}"`);
     console.log(`🔊 [CloudSpeech] Hume description: "${description.slice(0, 120)}…"`);
 

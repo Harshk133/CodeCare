@@ -17,6 +17,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -35,6 +36,7 @@ const LANGUAGES = [
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const { language, setLanguage, theme, toggleTheme } = useHealthStore();
+  const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -42,11 +44,11 @@ export function AppShell({ children }: AppShellProps) {
   }, []);
 
   const navItems = [
-    { label: "Home", href: "/", icon: Home },
-    { label: "AI Assistant", href: "/chat", icon: MessageSquare },
-    { label: "Hospitals", href: "/hospitals", icon: MapPin },
-    { label: "Outbreaks", href: "/alerts", icon: AlertTriangle },
-    { label: "Awareness", href: "/awareness", icon: BookOpen },
+    { label: t("nav_home"), href: "/", icon: Home },
+    { label: t("nav_chat"), href: "/chat", icon: MessageSquare },
+    { label: t("nav_hospitals"), href: "/hospitals", icon: MapPin },
+    { label: t("nav_alerts"), href: "/alerts", icon: AlertTriangle },
+    { label: t("nav_awareness"), href: "/awareness", icon: BookOpen },
   ];
 
   if (!mounted) {
@@ -138,7 +140,7 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Global Medical Disclaimer Banner */}
       <div className="fixed bottom-16 left-0 right-0 z-30 md:bottom-0 border-t bg-amber-500/10 dark:bg-amber-500/5 backdrop-blur-md px-4 py-2 text-center text-[11px] text-amber-600 dark:text-amber-500 font-medium">
-        ⚠️ <strong>Medical Disclaimer:</strong> SwasthyaAI is an AI-powered public health tool for educational purposes only. It is NOT a replacement for professional medical advice, diagnosis, or treatment. Always consult a qualified physician for medical concerns.
+        {t("disclaimer")}
       </div>
 
       {/* Mobile Bottom Navigation Bar */}

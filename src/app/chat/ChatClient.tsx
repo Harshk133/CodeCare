@@ -41,6 +41,7 @@ export default function ChatClient() {
   const messagesEndRef  = useRef<HTMLDivElement>(null);
   const wasListeningRef = useRef(false);
   const callModeRef     = useRef(false);
+  const langRef         = useRef(language);
 
   const { requestLocation } = useNativeGeolocation();
 
@@ -51,6 +52,7 @@ export default function ChatClient() {
   const speech        = isActiveCloud ? cloudSpeech : localSpeech;
 
   useEffect(() => { callModeRef.current = callMode; }, [callMode]);
+  useEffect(() => { langRef.current = language; }, [language]);
 
   // Initialise API endpoint + request native/browser geolocation on mount
   useEffect(() => {
@@ -99,6 +101,7 @@ export default function ChatClient() {
 
     if (isActiveCloud && cloudSpeech.detectedLanguage && cloudSpeech.detectedLanguage !== language) {
       console.log(`🌐 [Chat] Language auto-detected: ${cloudSpeech.detectedLanguage}`);
+      langRef.current = cloudSpeech.detectedLanguage as LanguageCode; // sync ref immediately
       setLanguage(cloudSpeech.detectedLanguage as LanguageCode);
     }
 
@@ -206,17 +209,25 @@ export default function ChatClient() {
           .replace(/<directions>[\s\S]*?<\/directions>/gi, "")
           .trim();
 
-        // Hindi fallback when the LLM response is empty or purely structural
+        // Use langRef.current so we always get the up-to-date language even
+        // when setLanguage() hasn't re-rendered yet (stale closure guard).
+        const activeLang = langRef.current;
+
         const fallbackByLang: Record<string, string> = {
           hi: "आपकी बात समझ आई। मैं आपकी सहायता के लिए यहाँ हूँ। कृपया अपने लक्षण बताएं।",
+          mr: "तुमची बात समजली. मी तुमच्या मदतीसाठी येथे आहे.",
+          ta: "உங்கள் கேள்வி புரிந்தது. உங்களுக்கு உதவ இங்கே இருக்கிறேன்.",
+          te: "మీ విషయం అర్థమైంది. మీకు సహాయం చేయడానికి ఇక్కడ ఉన్నాను.",
+          bn: "আপনার কথা বুঝলাম। আমি আপনাকে সাহায্য করতে এখানে আছি।",
+          gu: "તમારી વાત સમજ આવી. હું તમારી સહાય માટે અહીં છું.",
           en: "I understand. Please describe your symptoms so I can help you.",
         };
         const textToSpeak = speakableText ||
-          fallbackByLang[language] ||
+          fallbackByLang[activeLang] ||
           fallbackByLang.en;
 
         if (isActiveCloud) {
-          speech.speakText(textToSpeak, { voice: preferredVoice, tone: detectTone(accumulatedText), language, onEnd });
+          speech.speakText(textToSpeak, { voice: preferredVoice, tone: detectTone(accumulatedText), language: activeLang, onEnd });
         } else {
           speech.speakText(textToSpeak, { onEnd });
         }
@@ -229,11 +240,11 @@ export default function ChatClient() {
         timestamp: Date.now(),
       });
       if (isVoiceSubmit && isActiveCloud) {
-        const errMsg = language === "hi"
+        const errMsg = langRef.current === "hi"
           ? "माफ़ करें, कोई समस्या हुई। कृपया दोबारा कोशिश करें।"
           : "Sorry, something went wrong. Please try again.";
         speech.speakText(errMsg, {
-          voice: preferredVoice, tone: "calm", language,
+          voice: preferredVoice, tone: "calm", language: langRef.current,
           onEnd: callModeRef.current ? autoListen : undefined,
         });
       }
@@ -305,7 +316,7 @@ export default function ChatClient() {
                 message={msg}
                 onSpeak={(text) =>
                   isActiveCloud
-                    ? speech.speakText(text, { voice: preferredVoice, tone: detectTone(text), language })
+                    ? speech.speakText(text, { voice: preferredVoice, tone: detectTone(text), language: langRef.current })
                     : speech.speakText(text)
                 }
                 isCurrentlySpeaking={speech.isSpeaking}
