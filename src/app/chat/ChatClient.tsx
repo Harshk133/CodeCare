@@ -19,6 +19,11 @@ import {
   Compass,
 } from "lucide-react";
 
+// TEST MODE: set NEXT_PUBLIC_VOICE_TEST_MODE=true in .env.local to skip the LLM
+// and have Hume speak a fixed Hindi phrase on every voice input.
+const VOICE_TEST_MODE = process.env.NEXT_PUBLIC_VOICE_TEST_MODE === "true";
+const VOICE_TEST_PHRASE = "hi mai swasthya ai hu mai apki kya madat kr sakta hu";
+
 function detectTone(text: string): "calm" | "empathetic" | "reassuring" | "urgent" {
   if (text.includes("<emergency>")) return "urgent";
   if (text.includes('"riskLevel":"high"') || text.includes('"riskLevel": "high"')) return "empathetic";
@@ -80,6 +85,13 @@ export default function ChatClient() {
     if (speech.transcript && wasListeningRef.current) {
       wasListeningRef.current = false;
       setInputValue(speech.transcript);
+
+      // VOICE_TEST_MODE: skip LLM entirely; send fixed phrase to Hume to verify STT→TTS pipeline.
+      if (VOICE_TEST_MODE && isActiveCloud) {
+        console.log("🧪 [Chat] VOICE_TEST_MODE — skipping LLM, speaking test phrase via Hume AI");
+        speech.speakText(VOICE_TEST_PHRASE, { voice: preferredVoice, tone: "calm", language: "hi" });
+        return;
+      }
 
       // Auto-update language from transcription (cloud speech only)
       if (isActiveCloud && cloudSpeech.detectedLanguage && cloudSpeech.detectedLanguage !== language) {
@@ -164,10 +176,10 @@ export default function ChatClient() {
         }
       }
 
-      // Auto-speak voice responses with detected tone + preferred voice
+      // Auto-speak voice responses with detected tone + preferred voice + detected language
       if (isVoiceSubmit && isActiveCloud) {
         const tone = detectTone(accumulatedText);
-        speech.speakText(accumulatedText, { voice: preferredVoice, tone });
+        speech.speakText(accumulatedText, { voice: preferredVoice, tone, language });
       } else if (isVoiceSubmit) {
         speech.speakText(accumulatedText);
       }
@@ -213,7 +225,7 @@ export default function ChatClient() {
                 onSpeak={(text) => {
                   const tone = detectTone(text);
                   if (isActiveCloud) {
-                    speech.speakText(text, { voice: preferredVoice, tone });
+                    speech.speakText(text, { voice: preferredVoice, tone, language });
                   } else {
                     speech.speakText(text);
                   }

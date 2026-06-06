@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         ].join(","),
       },
       body: JSON.stringify({
-        includedTypes: ["hospital", "doctor", "health"],
+        includedTypes: ["hospital", "doctor", "medical_clinic"],
         maxResultCount: 10,
         locationRestriction: {
           circle: {

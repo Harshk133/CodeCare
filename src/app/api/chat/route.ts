@@ -1,9 +1,8 @@
-import { streamText, tool, stepCountIs } from "ai";
+import { streamText, tool, stepCountIs, jsonSchema } from "ai";
 import { google } from "@ai-sdk/google";
 import { createOpenAI } from "@ai-sdk/openai";
 import { queryRAG } from "@/services/ragService";
 import { DISEASES_KNOWLEDGE, MOCK_OUTBREAKS } from "@/constants/medicalKnowledge";
-import { z } from "zod";
 
 export const maxDuration = 60;
 
@@ -105,6 +104,13 @@ export async function POST(req: Request) {
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: process.env.OPENROUTER_API_KEY,
         headers: { "HTTP-Referer": "https://swasthya-ai.vercel.app", "X-Title": "SwasthyaAI" },
+        fetch: async (url, options) => {
+          console.log("✈️ [Fetch Interceptor] Request URL:", url);
+          if (options?.body) {
+            console.log("✈️ [Fetch Interceptor] Request Body:\n", JSON.stringify(JSON.parse(options.body as string), null, 2));
+          }
+          return fetch(url, options);
+        }
       });
       const modelName = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
       console.log(`🤖 [API Route] OpenRouter model: [${modelName}]`);
@@ -158,17 +164,29 @@ Longitude: ${userLocation?.longitude ?? "unknown"}
 
 Respond in structured markdown. Keep concise for mobile.`;
 
-    // ─── Tool definitions — NO "as any" on tool() to preserve Zod schema ───────
+    // ─── Tool definitions — use jsonSchema() to avoid Zod 3.25 _def incompatibility ─
     const result = streamText({
       model: modelInstance,
       system: systemPrompt,
       messages: llmMessages,
       stopWhen: stepCountIs(5),
       tools: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         getDiseaseInformation: tool({
           description: "Get symptom profiles, WHO advisories, allopathic and homeopathic remedies for a disease",
-          parameters: z.object({
-            diseaseId: z.string().describe("Disease ID: dengue | malaria | covid | tuberculosis"),
+          parameters: jsonSchema<{ diseaseId: string }>({
+            type: "object",
+            properties: {
+              diseaseId: { type: "string", description: "Disease ID: dengue | malaria | covid | tuberculosis" },
+            },
+            required: ["diseaseId"],
+          }),
+          inputSchema: jsonSchema<{ diseaseId: string }>({
+            type: "object",
+            properties: {
+              diseaseId: { type: "string", description: "Disease ID: dengue | malaria | covid | tuberculosis" },
+            },
+            required: ["diseaseId"],
           }),
           execute: async ({ diseaseId }: { diseaseId: string }) => {
             console.log(`🔧 [Tool] getDiseaseInformation: ${diseaseId}`);
@@ -177,15 +195,28 @@ Respond in structured markdown. Keep concise for mobile.`;
               ? { success: true, data }
               : { success: false, message: "Disease not found in knowledge base" };
           },
-        }),
+        } as any),
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         getNearbyHospitals: tool({
           description: "Locate nearby hospitals and Primary Health Centers (PHCs) specializing in a disease",
-          parameters: z.object({
-            latitude: z.number().optional().describe("User latitude"),
-            longitude: z.number().optional().describe("User longitude"),
-            emergencyOnly: z.boolean().optional().describe("Filter for 24/7 emergency care only"),
-            diseaseId: z.string().optional().describe("Filter by specialty: dengue | malaria | tuberculosis | stroke | emergency"),
+          parameters: jsonSchema<{ latitude?: number; longitude?: number; emergencyOnly?: boolean; diseaseId?: string }>({
+            type: "object",
+            properties: {
+              latitude: { type: "number", description: "User latitude" },
+              longitude: { type: "number", description: "User longitude" },
+              emergencyOnly: { type: "boolean", description: "Filter for 24/7 emergency care only" },
+              diseaseId: { type: "string", description: "Filter by specialty: dengue | malaria | tuberculosis | stroke | emergency" },
+            },
+          }),
+          inputSchema: jsonSchema<{ latitude?: number; longitude?: number; emergencyOnly?: boolean; diseaseId?: string }>({
+            type: "object",
+            properties: {
+              latitude: { type: "number", description: "User latitude" },
+              longitude: { type: "number", description: "User longitude" },
+              emergencyOnly: { type: "boolean", description: "Filter for 24/7 emergency care only" },
+              diseaseId: { type: "string", description: "Filter by specialty: dengue | malaria | tuberculosis | stroke | emergency" },
+            },
           }),
           execute: async ({ latitude, longitude, emergencyOnly, diseaseId }: { latitude?: number; longitude?: number; emergencyOnly?: boolean; diseaseId?: string }) => {
             const lat = typeof latitude === "number" && !isNaN(latitude) ? latitude : (userLocation?.latitude ?? 18.5204);
@@ -240,16 +271,32 @@ Respond in structured markdown. Keep concise for mobile.`;
             const filtered = emergencyOnly ? scored.filter((h) => h.hasEmergency24_7) : scored;
             return { success: true, hospitals: filtered.slice(0, 3), source: "mock" };
           },
-        }),
+        } as any),
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         getHospitalDirections: tool({
           description: "Get driving directions, ETA, and distance from user location to a specific hospital",
-          parameters: z.object({
-            originLat: z.number().describe("User's latitude"),
-            originLng: z.number().describe("User's longitude"),
-            destinationLat: z.number().describe("Hospital's latitude"),
-            destinationLng: z.number().describe("Hospital's longitude"),
-            hospitalName: z.string().optional().describe("Hospital name for display"),
+          parameters: jsonSchema<{ originLat: number; originLng: number; destinationLat: number; destinationLng: number; hospitalName?: string }>({
+            type: "object",
+            properties: {
+              originLat: { type: "number", description: "User's' latitude" },
+              originLng: { type: "number", description: "User's' longitude" },
+              destinationLat: { type: "number", description: "Hospital's' latitude" },
+              destinationLng: { type: "number", description: "Hospital's' longitude" },
+              hospitalName: { type: "string", description: "Hospital name for display" },
+            },
+            required: ["originLat", "originLng", "destinationLat", "destinationLng"],
+          }),
+          inputSchema: jsonSchema<{ originLat: number; originLng: number; destinationLat: number; destinationLng: number; hospitalName?: string }>({
+            type: "object",
+            properties: {
+              originLat: { type: "number", description: "User's' latitude" },
+              originLng: { type: "number", description: "User's' longitude" },
+              destinationLat: { type: "number", description: "Hospital's' latitude" },
+              destinationLng: { type: "number", description: "Hospital's' longitude" },
+              hospitalName: { type: "string", description: "Hospital name for display" },
+            },
+            required: ["originLat", "originLng", "destinationLat", "destinationLng"],
           }),
           execute: async ({ originLat, originLng, destinationLat, destinationLng, hospitalName }: { originLat: number; originLng: number; destinationLat: number; destinationLng: number; hospitalName?: string }) => {
             const lat = typeof originLat === "number" && !isNaN(originLat) ? originLat : (userLocation?.latitude ?? 18.5204);
@@ -285,12 +332,24 @@ Respond in structured markdown. Keep concise for mobile.`;
               destination: { latitude: destinationLat, longitude: destinationLng },
             };
           },
-        }),
+        } as any),
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         getOutbreakAlerts: tool({
           description: "Query active public health outbreaks and alerts for an Indian state",
-          parameters: z.object({
-            state: z.string().describe("Indian state name e.g. Maharashtra, Kerala, West Bengal"),
+          parameters: jsonSchema<{ state: string }>({
+            type: "object",
+            properties: {
+              state: { type: "string", description: "Indian state name e.g. Maharashtra, Kerala, West Bengal" },
+            },
+            required: ["state"],
+          }),
+          inputSchema: jsonSchema<{ state: string }>({
+            type: "object",
+            properties: {
+              state: { type: "string", description: "Indian state name e.g. Maharashtra, Kerala, West Bengal" },
+            },
+            required: ["state"],
           }),
           execute: async ({ state }: { state: string }) => {
             console.log(`🔧 [Tool] getOutbreakAlerts: ${state}`);
@@ -299,7 +358,7 @@ Respond in structured markdown. Keep concise for mobile.`;
             );
             return { success: true, alerts };
           },
-        }),
+        } as any),
       },
     });
 
