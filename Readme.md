@@ -129,20 +129,9 @@ Unlike traditional symptom checkers, SwasthyaAI focuses on:
 
 ## 🏗️ System Architecture
 
-User Input
-↓
-Language Detection
-↓
-AI Symptom Analysis
-↓
-Risk Assessment
-↓
-Healthcare Guidance
-↓
-Hospital Recommendation
-↓
-Outbreak Monitoring
+<img width="572" height="763" alt="WhatsApp Image 2026-06-05 at 7 00 02 PM" src="https://github.com/user-attachments/assets/4e7736e8-9d8b-41d6-b31b-881526bb022e" />
 
+This Is The Documentation Link - https://swasthy-ai-documentation.netlify.app/
 ---
 
 ## 🛠️ Tech Stack
