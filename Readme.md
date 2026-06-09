@@ -242,3 +242,7 @@ The platform is intended for healthcare awareness, early guidance, and education
 ## 📄 License
 
 Developed for AGTechathon 2.0 Hackathon.
+
+---
+
+Give a 🌟 Star to this repository!
