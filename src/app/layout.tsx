@@ -1,17 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Outfit } from "next/font/google";
+import {
+  Baloo_2,
+  Baloo_Bhai_2,
+  Baloo_Da_2,
+  Baloo_Tammudu_2,
+  Baloo_Thambi_2,
+  Mukta,
+} from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
+const baloo = Baloo_2({
+  subsets: ["latin", "devanagari"],
+  variable: "--font-baloo",
 });
 
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-heading",
+const mukta = Mukta({
+  subsets: ["latin", "devanagari"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mukta",
 });
+
+// Per-script siblings: only downloaded when a glyph from that script appears.
+const balooTamil = Baloo_Thambi_2({ subsets: ["tamil"], variable: "--font-baloo-ta", preload: false });
+const balooTelugu = Baloo_Tammudu_2({ subsets: ["telugu"], variable: "--font-baloo-te", preload: false });
+const balooBengali = Baloo_Da_2({ subsets: ["bengali"], variable: "--font-baloo-bn", preload: false });
+const balooGujarati = Baloo_Bhai_2({ subsets: ["gujarati"], variable: "--font-baloo-gu", preload: false });
 
 export const metadata: Metadata = {
   title: "SwasthyaAI - Multilingual AI Public Health Assistant",
@@ -28,10 +42,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover", // extends into notch / dynamic island area on iOS
-  themeColor: "#0d9488",
+  themeColor: "#2B3A99",
 };
 
 export default function RootLayout({
@@ -42,11 +54,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${outfit.variable}`}
+      className={[
+        baloo.variable,
+        mukta.variable,
+        balooTamil.variable,
+        balooTelugu.variable,
+        balooBengali.variable,
+        balooGujarati.variable,
+      ].join(" ")}
       suppressHydrationWarning
     >
       <body
-        className="bg-background font-sans text-foreground antialiased selection:bg-primary selection:text-white"
+        className="bg-background font-sans text-foreground antialiased"
         style={{
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",

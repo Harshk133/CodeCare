@@ -6,15 +6,14 @@ import {
   Volume2,
   VolumeX,
   PhoneCall,
-  Activity,
   AlertOctagon,
-  Clock,
   Navigation,
   MapPin,
   Timer,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { Logo } from "@/components/shared/AppShell";
 
 const HospitalMap = dynamic(() => import("./HospitalMap"), {
   ssr: false,
@@ -93,178 +92,189 @@ export function ChatBubble({
     .replace(/<directions>[\s\S]*?<\/directions>/gi, "")
     .trim();
 
-  // Determine Triage color styles
-  const getTriageStyles = (risk: string) => {
-    switch (risk) {
-      case "emergency":
-        return "border-rose-500 bg-rose-500/10 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400";
-      case "high":
-        return "border-orange-500 bg-orange-500/10 dark:bg-orange-950/20 text-orange-700 dark:text-orange-400";
-      case "medium":
-        return "border-amber-500 bg-amber-500/10 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400";
-      case "low":
-      default:
-        return "border-emerald-500 bg-emerald-500/10 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400";
-    }
-  };
+  if (message.role === "system") {
+    return (
+      <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-[15px] text-foreground">
+        <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+        <span>{message.content}</span>
+      </div>
+    );
+  }
+
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-[15px] leading-relaxed text-primary-foreground md:max-w-[70%]">
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
+  const isWaiting = !message.content.trim();
 
   return (
-    <div
-      className={cn(
-        "flex w-full flex-col gap-2.5 px-1 py-2 transition-all duration-300",
-        isUser ? "items-end" : "items-start"
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {isUser ? "You" : "SwasthyaAI Health Assistant"}
-        </span>
-        {!isUser && onSpeak && (
-          <button
-            onClick={() => (isCurrentlySpeaking ? onStopSpeaking?.() : onSpeak(cleanContent))}
-            className="flex h-5 w-5 items-center justify-center rounded bg-secondary hover:bg-muted text-muted-foreground transition-colors"
-            title="Read aloud"
-          >
-            {isCurrentlySpeaking ? (
-              <VolumeX className="h-3 w-3 text-primary" />
-            ) : (
-              <Volume2 className="h-3 w-3" />
-            )}
-          </button>
-        )}
-      </div>
+    <article className="flex gap-3">
+      <Logo className="mt-0.5 h-7 w-7 shrink-0" />
+      <div className="min-w-0 flex-1 space-y-4">
+        <div className="flex h-7 items-center gap-2">
+          <span className="font-heading text-[15px] font-semibold">SwasthyaAI</span>
+          {onSpeak && !isWaiting && (
+            <button
+              onClick={() => (isCurrentlySpeaking ? onStopSpeaking?.() : onSpeak(cleanContent))}
+              className="flex h-7 items-center gap-1 rounded-md px-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={isCurrentlySpeaking ? "Stop reading aloud" : "Read aloud"}
+            >
+              {isCurrentlySpeaking ? <VolumeX className="h-4 w-4 text-primary" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+          )}
+        </div>
 
-      <div
-        className={cn(
-          "max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm md:max-w-[75%] leading-relaxed",
-          isUser
-            ? "bg-primary text-white rounded-tr-none font-medium"
-            : "bg-card border rounded-tl-none text-foreground"
+        {isWaiting && (
+          <div className="flex h-6 items-center gap-1.5" aria-label="SwasthyaAI is typing">
+            {[0, 150, 300].map((d) => (
+              <span
+                key={d}
+                className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
+                style={{ animationDelay: `${d}ms` }}
+              />
+            ))}
+          </div>
         )}
-      >
-        {/* Renders Emergency Alert Card if detected */}
+
         {emergencyData && (
-          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 dark:bg-red-950/20 p-4 text-red-900 dark:text-red-300 animate-pulse-alert">
-            <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-bold mb-3">
-              <AlertOctagon className="h-5.5 w-5.5" />
-              <span>🚨 EMERGENCY ADVISORY: ACTION REQUIRED</span>
-            </div>
-            <p className="text-xs font-semibold mb-2">
-              Symptom: {emergencyData.symptom}
-            </p>
-            <div className="text-xs space-y-1.5 pl-1.5 border-l-2 border-red-500/50">
+          <section className="rounded-xl bg-destructive p-5 text-destructive-foreground" aria-label="Emergency">
+            <h3 className="flex items-center gap-2 text-xl font-bold leading-tight">
+              <AlertOctagon className="h-6 w-6 shrink-0" aria-hidden="true" />
+              Get emergency help now
+            </h3>
+            <p className="mt-1 text-[15px] opacity-90">{emergencyData.symptom}</p>
+            <ol className="mt-4 list-decimal space-y-1.5 pl-5 text-[15px] leading-snug marker:font-semibold">
               {emergencyData.immediateActions.map((act, idx) => (
-                <div key={idx} className="flex gap-1.5">
-                  <span className="font-bold">{idx + 1}.</span>
-                  <span>{act}</span>
-                </div>
+                <li key={idx}>{act}</li>
               ))}
-            </div>
-            <div className="mt-4 flex gap-2.5">
-              <a
-                href="tel:108"
-                className="flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white px-3.5 py-2 text-xs font-bold transition-all hover:scale-105"
-              >
-                <PhoneCall className="h-3.5 w-3.5" />
-                Call Ambulance (108)
-              </a>
-            </div>
-          </div>
+            </ol>
+            <a
+              href="tel:108"
+              className="mt-5 inline-flex h-12 items-center gap-2 rounded-lg bg-white px-5 text-base font-bold text-destructive"
+            >
+              <PhoneCall className="h-5 w-5" aria-hidden="true" />
+              Call 108 ambulance
+            </a>
+          </section>
         )}
 
-        {/* Renders Triage Diagnostic Card if detected */}
-        {triageData && (
-          <div
-            className={cn(
-              "mb-4 rounded-xl border p-4",
-              getTriageStyles(triageData.riskLevel)
-            )}
-          >
-            <div className="flex items-center justify-between font-bold border-b pb-2 mb-2">
-              <div className="flex items-center gap-1.5">
-                <Activity className="h-4 w-4" />
-                <span className="capitalize">Risk: {triageData.riskLevel}</span>
-              </div>
-              <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-background border font-semibold">
-                Clinical Triage
-              </span>
-            </div>
+        {triageData && <TriageCard triage={triageData} />}
 
-            <div className="space-y-3 text-xs text-foreground/90">
-              <div>
-                <span className="font-bold block text-muted-foreground mb-0.5">Concerns:</span>
-                <ul className="list-disc pl-4 space-y-0.5">
-                  {triageData.concerns.map((c, i) => (
-                    <li key={i}>{c}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <span className="font-bold block text-muted-foreground mb-0.5">Recommended Actions:</span>
-                <ul className="list-decimal pl-4 space-y-0.5">
-                  {triageData.actions.map((a, i) => (
-                    <li key={i}>{a}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="pt-2 border-t border-muted/50 text-[11px] leading-relaxed italic text-muted-foreground flex gap-1.5">
-                <Clock className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Reasoning:</strong> {triageData.reasoning}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Renders Hospital Route Map Card if detected */}
         {hospitalsData && (
-          <div className="mb-4">
-            <HospitalMap
-              userLocation={hospitalsData.userLocation}
-              hospitals={hospitalsData.hospitals}
-            />
-          </div>
+          <HospitalMap userLocation={hospitalsData.userLocation} hospitals={hospitalsData.hospitals} />
         )}
 
-        {/* Renders Directions Summary Card if detected */}
         {directionsData && (
-          <div className="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/5 dark:bg-blue-950/10 p-4">
-            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-xs mb-3">
-              <Navigation className="h-4 w-4" />
-              <span>Route to {directionsData.hospitalName}</span>
-            </div>
-            <div className="flex gap-4 mb-3">
-              <div className="flex items-center gap-1.5 text-xs">
-                <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">Distance:</span>
-                <span className="font-bold text-foreground">{directionsData.distance}</span>
+          <section className="rounded-xl border bg-card p-4">
+            <h3 className="flex items-center gap-2 text-base font-semibold">
+              <Navigation className="h-4 w-4 text-primary" aria-hidden="true" />
+              Route to {directionsData.hospitalName}
+            </h3>
+            <dl className="mt-3 flex gap-8 text-sm">
+              <div>
+                <dt className="flex items-center gap-1 text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5" aria-hidden="true" /> Distance
+                </dt>
+                <dd className="font-heading text-lg font-semibold">{directionsData.distance}</dd>
               </div>
-              <div className="flex items-center gap-1.5 text-xs">
-                <Timer className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">ETA:</span>
-                <span className="font-bold text-foreground">{directionsData.duration}</span>
+              <div>
+                <dt className="flex items-center gap-1 text-muted-foreground">
+                  <Timer className="h-3.5 w-3.5" aria-hidden="true" /> Travel time
+                </dt>
+                <dd className="font-heading text-lg font-semibold">{directionsData.duration}</dd>
               </div>
-            </div>
+            </dl>
             <a
               href={`https://www.google.com/maps/dir/${directionsData.origin.latitude},${directionsData.origin.longitude}/${directionsData.destination.latitude},${directionsData.destination.longitude}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 text-[11px] font-bold transition-all hover:scale-105 active:scale-95"
+              className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
             >
-              <Navigation className="h-3.5 w-3.5" />
+              <Navigation className="h-4 w-4" aria-hidden="true" />
               Open in Google Maps
             </a>
-          </div>
+          </section>
         )}
 
-        {/* Plain Text Message Content */}
-        <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-          {cleanContent}
+        {cleanContent && (
+          <div className="max-w-[68ch] whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
+            {cleanContent}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+const RISK_STEPS: { level: TriageResult["riskLevel"]; label: string; fill: string; text: string }[] = [
+  { level: "low", label: "Low", fill: "bg-safe", text: "text-safe" },
+  { level: "medium", label: "Medium", fill: "bg-caution", text: "text-caution" },
+  { level: "high", label: "High", fill: "bg-warning", text: "text-warning" },
+  { level: "emergency", label: "Emergency", fill: "bg-destructive", text: "text-destructive" },
+];
+
+function TriageCard({ triage }: { triage: TriageResult }) {
+  const activeIdx = Math.max(0, RISK_STEPS.findIndex((s) => s.level === triage.riskLevel));
+  const active = RISK_STEPS[activeIdx];
+
+  return (
+    <section className="rounded-xl border bg-card p-4 sm:p-5" aria-label="Urgency assessment">
+      <div className="flex items-baseline justify-between gap-4">
+        <h3 className="text-base font-semibold text-muted-foreground">How urgent this looks</h3>
+        <span className={cn("font-heading text-xl font-bold", active.text)}>{active.label}</span>
+      </div>
+
+      {/* Four-step scale: where this case sits between "manage at home" and "emergency" */}
+      <div className="mt-3 grid grid-cols-4 gap-1" role="img" aria-label={`Urgency ${active.label}, ${activeIdx + 1} of 4`}>
+        {RISK_STEPS.map((s, i) => (
+          <div key={s.level}>
+            <div className={cn("h-2 rounded-full", i <= activeIdx ? s.fill : "bg-muted")} />
+            <span
+              className={cn(
+                "mt-1.5 block text-xs",
+                i === activeIdx ? "font-semibold text-foreground" : "text-muted-foreground"
+              )}
+            >
+              {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <div>
+          <h4 className="text-[15px] font-semibold">What it could be</h4>
+          <ul className="mt-1.5 space-y-1 text-[15px] leading-snug">
+            {triage.concerns.map((c, i) => (
+              <li key={i} className="flex gap-2">
+                <span aria-hidden="true" className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/60" />
+                {c}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-[15px] font-semibold">What to do next</h4>
+          <ol className="mt-1.5 list-decimal space-y-1 pl-5 text-[15px] leading-snug marker:text-muted-foreground">
+            {triage.actions.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ol>
         </div>
       </div>
-    </div>
+
+      {triage.reasoning && (
+        <p className="mt-5 border-t pt-4 text-sm leading-relaxed text-muted-foreground">
+          <span className="font-semibold text-foreground">Why: </span>
+          {triage.reasoning}
+        </p>
+      )}
+    </section>
   );
 }

@@ -6,20 +6,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev        # Start Next.js dev server (localhost:3000)
-npm run build      # Production build
-npm run lint       # ESLint check
+npm run build      # Static export build → out/ (next.config.ts sets output: "export")
+npm run lint       # ESLint check (lint is skipped during `next build`)
 npm run format     # Prettier format (writes in place)
+
+# Android (Capacitor, webDir = out/)
+npm run mobile:android         # scripts/build-android.ps1: build, add platform if missing, patch AndroidManifest permissions, sync, open Android Studio
+npm run mobile:android:device  # same, but runs on a connected device
+npm run mobile:sync            # npx cap sync android (after a build)
+
+# Utility scripts (load .env.local via dotenv)
+npx jiti scripts/seed-db.ts    # Embed DISEASES_KNOWLEDGE into the Pinecone index
+npx jiti scripts/test-chat.ts  # Smoke-test POST /api/chat (hardcoded to localhost:3001)
 ```
 
 There is no test suite configured. Type-checking is done via `tsc --noEmit` (not in scripts, run manually if needed).
+
+## Web vs. Native Runtime
+
+The same Next.js app ships as a website and as a Capacitor Android app. Inside the Capacitor WebView there is no Next.js server, so:
+- **All client-side API calls must go through `getApiUrl()`** (`src/lib/getApiUrl.ts`). It returns relative paths in the browser and prefixes `NEXT_PUBLIC_API_BASE_URL` (default `https://swasthya-ai.vercel.app`) when native. Only set that var for Capacitor builds — setting it locally sends every request to Vercel.
+- Native-vs-browser differences (geolocation permission, mic pre-warm, status bar) live in `src/hooks/useNativeBridge.ts`; Capacitor plugins are dynamically imported so the web build doesn't break.
+- Because of the static export, dynamic routes need `generateStaticParams` (see `awareness/[disease]/page.tsx`).
+- New external domains the app calls must be added to `server.allowNavigation` in `capacitor.config.ts`.
 
 ## Environment Setup
 
 Copy `.env.example` to `.env.local`. The app has a built-in simulation mode when API keys are missing — set `NEXT_PUBLIC_SIMULATION_MODE=true` to run fully offline with no external API calls.
 
 Key env vars:
-- `NEXT_PUBLIC_AI_PROVIDER` — `gemini` (default) or `openrouter`
-- `NEXT_PUBLIC_GEMINI_API_KEY` / `OPENROUTER_API_KEY` — at least one required for live AI
+- `NEXT_PUBLIC_AI_PROVIDER` — `openrouter` (default in code) or `gemini`; falls back to the other provider, then simulation, if the chosen key is missing
+- `NEXT_PUBLIC_GEMINI_API_KEY` / `OPENROUTER_API_KEY` — at least one required for live AI; `OPENROUTER_MODEL` defaults to `openai/gpt-4o-mini`, Gemini uses `gemini-2.0-flash`
+- `GOOGLE_MAPS_API_KEY` (server) — enables live Google Places results in `/api/hospitals`, `/api/directions`, and the `getNearbyHospitals` tool; otherwise mock hospitals are returned
 - `PINECONE_API_KEY` + `PINECONE_INDEX` — required for vector RAG (falls back to local keyword search if absent)
 - `OPENAI_API_KEY` — required for cloud voice (Whisper STT + TTS); can be routed via OpenRouter by setting `OPENAI_API_BASE_URL`
 - `HUME_API_KEY` — optional empathic TTS (Hume AI); falls back to OpenAI TTS if unavailable
@@ -68,7 +86,7 @@ Static in-memory dataset of diseases (`DISEASES_KNOWLEDGE`) and mock outbreak al
 
 ### Hospital Data
 
-Currently mock data hardcoded in `src/app/api/chat/route.ts` (`MOCK_HOSPITALS`). Distance is approximated using Euclidean lat/lng difference × 111 km/degree. The `getNearbyHospitals` tool sorts by specialty match first, then proximity.
+Google Places (New) `searchNearby` when `GOOGLE_MAPS_API_KEY` is set; otherwise mock data — `MOCK_HOSPITALS` in `src/app/api/chat/route.ts` for the chat tool, and a separate `getMockHospitals()` in `src/app/api/hospitals/route.ts` for the hospitals page. Distance is approximated using Euclidean lat/lng difference × 111 km/degree. The `getNearbyHospitals` tool sorts by specialty match first, then proximity.
 
 ### Pages / Routes
 

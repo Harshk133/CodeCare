@@ -7,23 +7,28 @@ import { useHealthStore } from "@/store/useHealthStore";
 import { LanguageCode } from "@/types";
 import {
   Home,
-  MessageSquare,
+  MessageCircle,
   MapPin,
-  AlertTriangle,
+  Radio,
   BookOpen,
-  Globe,
   Sun,
   Moon,
-  ShieldAlert,
+  Phone,
+  Languages,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface AppShellProps {
   children: React.ReactNode;
+  /**
+   * "page" — scrolling document with a footer (landing, content pages).
+   * "app"  — fills exactly one viewport; the child manages its own scrolling (chat).
+   */
+  variant?: "page" | "app";
 }
 
-const LANGUAGES = [
+export const LANGUAGES: { code: LanguageCode; name: string }[] = [
   { code: "en", name: "English" },
   { code: "hi", name: "हिन्दी" },
   { code: "mr", name: "मराठी" },
@@ -33,7 +38,19 @@ const LANGUAGES = [
   { code: "gu", name: "ગુજરાતી" },
 ];
 
-export function AppShell({ children }: AppShellProps) {
+export function Logo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true" className={className}>
+      <circle cx="16" cy="16" r="15" className="fill-accent" />
+      <path
+        d="M13 8.5h6v4.5h4.5v6H19v4.5h-6V19H8.5v-6H13z"
+        className="fill-primary dark:fill-[hsl(var(--background))]"
+      />
+    </svg>
+  );
+}
+
+export function AppShell({ children, variant = "page" }: AppShellProps) {
   const pathname = usePathname();
   const { language, setLanguage, theme, toggleTheme } = useHealthStore();
   const { t } = useTranslation();
@@ -43,124 +60,137 @@ export function AppShell({ children }: AppShellProps) {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   const navItems = [
     { label: t("nav_home"), href: "/", icon: Home },
-    { label: t("nav_chat"), href: "/chat", icon: MessageSquare },
+    { label: t("nav_chat"), href: "/chat", icon: MessageCircle },
     { label: t("nav_hospitals"), href: "/hospitals", icon: MapPin },
-    { label: t("nav_alerts"), href: "/alerts", icon: AlertTriangle },
+    { label: t("nav_alerts"), href: "/alerts", icon: Radio },
     { label: t("nav_awareness"), href: "/awareness", icon: BookOpen },
   ];
+
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname?.startsWith(href);
 
   if (!mounted) {
     return <div className="min-h-screen bg-background">{children}</div>;
   }
 
+  const isApp = variant === "app";
+
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-white shadow-md shadow-primary/20">
-              <ShieldAlert className="h-5.5 w-5.5 animate-pulse" />
-            </div>
-            <div>
-              <span className="font-heading text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                SwasthyaAI
-              </span>
-              <span className="hidden sm:inline-block ml-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Public Health Assistant
-              </span>
-            </div>
+    <div
+      className={cn(
+        "flex flex-col bg-background text-foreground",
+        isApp ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh]"
+      )}
+    >
+      {/* Emergency line — always one tap away */}
+      <a
+        href="tel:108"
+        className="group flex items-center justify-center gap-2 bg-destructive px-4 py-1.5 text-[13px] leading-tight text-destructive-foreground"
+      >
+        <span className="hidden sm:inline">{t("emergency_strip")}</span>
+        <span className="inline-flex items-center gap-1.5 font-semibold underline-offset-2 group-hover:underline">
+          <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+          {t("emergency_call")}
+        </span>
+      </a>
+
+      <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
+          <Link href="/" className="flex items-center gap-2 rounded-md">
+            <Logo className="h-7 w-7" />
+            <span className="font-heading text-[1.35rem] font-bold leading-none tracking-tight text-primary">
+              SwasthyaAI
+            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
+          <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+            {navItems.slice(1).map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={cn(
+                  "relative rounded-md px-3 py-2 text-[15px] font-medium transition-colors",
+                  isActive(item.href)
+                    ? "text-foreground after:absolute after:inset-x-3 after:-bottom-[9px] after:h-[3px] after:rounded-full after:bg-accent"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
-          {/* Configuration Actions */}
-          <div className="flex items-center gap-3">
-            {/* Language Switcher */}
-            <div className="relative flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 glass text-xs font-semibold">
-              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+          <div className="flex items-center gap-1.5">
+            <label className="relative flex h-9 items-center gap-1.5 rounded-md border bg-card pl-2.5 pr-2 text-sm">
+              <Languages className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <span className="sr-only">Language</span>
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as LanguageCode)}
-                className="bg-transparent outline-none cursor-pointer text-foreground font-medium"
+                className="cursor-pointer bg-transparent pr-1 font-medium text-foreground outline-none"
               >
                 {LANGUAGES.map((lang) => (
-                  <option
-                    key={lang.code}
-                    value={lang.code}
-                    className="text-foreground bg-background"
-                  >
+                  <option key={lang.code} value={lang.code} className="bg-card text-foreground">
                     {lang.name}
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
 
-            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border glass hover:bg-muted transition-colors"
-              aria-label="Toggle theme"
+              className="flex h-9 w-9 items-center justify-center rounded-md border bg-card text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}
             >
-              {theme === "light" ? (
-                <Moon className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <Sun className="h-4 w-4 text-primary" />
-              )}
+              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 pb-20 md:pb-6">
-        <div className="container mx-auto px-4 py-6">{children}</div>
+      <main className={cn("flex-1", isApp && "min-h-0")}>
+        {isApp ? children : <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 md:pt-12">{children}</div>}
       </main>
 
-      {/* Global Medical Disclaimer Banner */}
-      <div className="fixed bottom-16 left-0 right-0 z-30 md:bottom-0 border-t bg-amber-500/10 dark:bg-amber-500/5 backdrop-blur-md px-4 py-2 text-center text-[11px] text-amber-600 dark:text-amber-500 font-medium">
-        {t("disclaimer")}
-      </div>
+      {!isApp && (
+        <footer className="border-t">
+          <div className="mx-auto max-w-6xl px-4 py-8 text-sm leading-relaxed text-muted-foreground">
+            <p className="max-w-[70ch]">{t("disclaimer").replace(/^⚠️\s*/, "")}</p>
+          </div>
+        </footer>
+      )}
 
-      {/* Mobile Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t bg-background/95 backdrop-blur-md md:hidden px-2 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+      {/* Mobile bottom navigation */}
+      <nav
+        aria-label="Main"
+        className={cn(
+          "z-40 grid grid-cols-5 border-t bg-background md:hidden",
+          isApp ? "" : "sticky bottom-0"
+        )}
+      >
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const active = isActive(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center justify-center w-14 h-12 rounded-lg transition-all",
-                isActive
-                  ? "text-primary scale-105 font-bold"
-                  : "text-muted-foreground active:scale-95"
+                "relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] leading-none",
+                active ? "font-semibold text-foreground" : "text-muted-foreground"
               )}
             >
-              <Icon className="h-5 w-5 mb-0.5" />
-              <span className="text-[10px] tracking-tight">{item.label}</span>
+              {active && <span className="absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-accent" />}
+              <Icon className={cn("h-5 w-5", active && "text-primary")} aria-hidden="true" />
+              <span className="max-w-full truncate px-1">{item.label}</span>
             </Link>
           );
         })}

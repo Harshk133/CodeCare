@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { AppShell } from "@/components/shared/AppShell";
 import dynamic from "next/dynamic";
 import { Coordinates } from "@/types";
-import { Compass, MapPin, Sparkles, Loader2 } from "lucide-react";
+import { Compass, LocateFixed, Loader2 } from "lucide-react";
 import { getApiUrl } from "@/lib/getApiUrl";
 import { useNativeGeolocation } from "@/hooks/useNativeBridge";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -72,7 +72,7 @@ export default function HospitalsClient() {
       setGpsError(null);
       fetchHospitals(coords);
     } else {
-      setGpsError("GPS denied. Using Pune Deccan Gymkhana as center.");
+      setGpsError("Location is off, so we're showing hospitals around central Pune. Allow location access and tap Use my location.");
       setUserLocation(PUNE_FALLBACK);
       fetchHospitals(PUNE_FALLBACK);
     }
@@ -84,70 +84,50 @@ export default function HospitalsClient() {
 
   return (
     <AppShell>
-      <div className="space-y-6 max-w-4xl mx-auto pb-8">
-        {/* Banner */}
-        <div className="relative overflow-hidden rounded-3xl border bg-gradient-to-r from-teal-500/10 via-cyan-500/5 to-transparent p-6 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-teal-500/15 px-2.5 py-0.5 text-[10px] font-bold text-teal-600 dark:text-teal-400 mb-2">
-                <Sparkles className="h-3 w-3" />
-                <span>{t("hospital_badge")}</span>
-              </div>
-              <h1 className="font-heading text-2xl font-bold tracking-tight">{t("hospital_title")}</h1>
-              <p className="text-xs text-muted-foreground max-w-md">
-                {t("hospital_desc")}
-                {dataSource === "google_places" && (
-                  <span className="ml-1 text-teal-600 dark:text-teal-400 font-semibold">{t("hospital_live")}</span>
-                )}
-              </p>
-            </div>
-            <button
-              onClick={geolocate}
-              disabled={isLocating || isFetchingHospitals}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:bg-teal-600/50 text-white px-4 py-2.5 text-xs font-bold transition-all shadow-md shadow-teal-500/10 active:scale-95"
-            >
-              {isLocating ? (
-                <><Compass className="h-4 w-4 animate-spin shrink-0" /><span>{t("hospital_geolocating")}</span></>
-              ) : isFetchingHospitals ? (
-                <><Loader2 className="h-4 w-4 animate-spin shrink-0" /><span>{t("hospital_loading")}</span></>
-              ) : (
-                <><MapPin className="h-4 w-4 shrink-0" /><span>{t("hospital_recenter")}</span></>
-              )}
-            </button>
-          </div>
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-4xl font-bold leading-tight sm:text-5xl">{t("hospital_title")}</h1>
+          <p className="mt-2 max-w-[60ch] text-lg leading-relaxed text-muted-foreground">
+            {t("hospital_desc")}
+            {dataSource === "google_places" && <> {t("hospital_live")}</>}
+          </p>
         </div>
+        <button
+          onClick={geolocate}
+          disabled={isLocating || isFetchingHospitals}
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 self-start rounded-lg border-2 border-primary/30 bg-card px-4 text-[15px] font-semibold text-foreground transition-colors hover:border-primary disabled:opacity-60 sm:self-auto"
+        >
+          {isLocating ? (
+            <><Compass className="h-4 w-4 animate-spin" aria-hidden="true" />{t("hospital_geolocating")}</>
+          ) : isFetchingHospitals ? (
+            <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />{t("hospital_loading")}</>
+          ) : (
+            <><LocateFixed className="h-4 w-4 text-primary" aria-hidden="true" />{t("hospital_recenter")}</>
+          )}
+        </button>
+      </header>
 
-        {gpsError && (
-          <div className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-4 py-2.5 text-xs text-amber-600 dark:text-amber-500 font-semibold border border-amber-500/20">
-            <Compass className="h-4 w-4 animate-spin-slow shrink-0" />
-            <span>{gpsError}</span>
-          </div>
-        )}
+      {gpsError && (
+        <p role="status" className="mt-6 flex items-start gap-2 rounded-lg border border-caution/40 bg-caution/10 px-4 py-3 text-[15px] leading-snug">
+          <Compass className="mt-0.5 h-4 w-4 shrink-0 text-caution" aria-hidden="true" />
+          {gpsError}
+        </p>
+      )}
 
-        {/* Map */}
+      <div className="mt-8">
         {userLocation && hospitals.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 px-1">
-              <MapPin className="h-4 w-4 text-teal-600" />
-              <span>{t("hospital_map_title")}</span>
-            </h3>
-            <HospitalMap userLocation={userLocation} hospitals={hospitals} />
+          <HospitalMap userLocation={userLocation} hospitals={hospitals} layout="split" />
+        )}
+
+        {isFetchingHospitals && hospitals.length === 0 && (
+          <div className="flex items-center gap-3 py-16 text-muted-foreground" role="status">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
+            <span className="text-[15px]">{t("hospital_searching")}</span>
           </div>
         )}
 
-        {/* Loading skeleton */}
-        {isFetchingHospitals && (
-          <div className="flex flex-col items-center justify-center py-12 gap-3 text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="text-sm font-medium">{t("hospital_searching")}</span>
-          </div>
-        )}
-
-        {/* Empty state */}
         {!isFetchingHospitals && hospitals.length === 0 && dataSource === "error" && (
-          <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground">
-            <span className="text-sm">{t("hospital_error")}</span>
-          </div>
+          <p role="alert" className="py-16 text-[15px] text-muted-foreground">{t("hospital_error")}</p>
         )}
       </div>
     </AppShell>

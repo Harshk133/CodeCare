@@ -10,7 +10,33 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        // Ek Type's Baloo family has a sibling per script, so headings keep one
+        // voice across all seven supported languages. Browsers fall through the
+        // stack per glyph, picking the face that covers each script.
+        heading: [
+          "var(--font-baloo)",
+          "var(--font-baloo-ta)",
+          "var(--font-baloo-te)",
+          "var(--font-baloo-bn)",
+          "var(--font-baloo-gu)",
+          "system-ui",
+          "sans-serif",
+        ],
+        sans: [
+          "var(--font-mukta)",
+          "var(--font-baloo-ta)",
+          "var(--font-baloo-te)",
+          "var(--font-baloo-bn)",
+          "var(--font-baloo-gu)",
+          "system-ui",
+          "sans-serif",
+        ],
+      },
       colors: {
+        safe: "hsl(var(--safe))",
+        caution: "hsl(var(--caution))",
+        warning: "hsl(var(--warning))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {
@@ -46,6 +72,7 @@ const config: Config = {
         ring: "hsl(var(--ring))",
       },
       borderRadius: {
+        xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

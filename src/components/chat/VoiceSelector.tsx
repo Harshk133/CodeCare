@@ -4,47 +4,42 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useHealthStore, VoiceName } from "@/store/useHealthStore";
 
-const VOICES: { name: VoiceName; gender: "male" | "female"; tagline: string }[] = [
-  { name: "Suresh", gender: "male",   tagline: "Deep & authoritative" },
-  { name: "Priya",  gender: "female", tagline: "Warm & clear" },
-  { name: "Arjun",  gender: "male",   tagline: "Calm & reassuring" },
+const VOICES: { name: VoiceName; tagline: string }[] = [
+  { name: "Suresh", tagline: "Deep, steady" },
+  { name: "Priya",  tagline: "Warm, clear" },
+  { name: "Arjun",  tagline: "Calm, reassuring" },
 ];
 
 export function VoiceSelector() {
   const { preferredVoice, setPreferredVoice } = useHealthStore();
 
   return (
-    <div className="flex flex-col gap-1.5 px-1 mt-2">
-      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-        Hindi Voice
-      </span>
-      <div className="flex gap-2">
+    <fieldset className="mb-2.5">
+      <legend className="sr-only">Hindi voice</legend>
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
+        <span className="mr-1 text-muted-foreground" aria-hidden="true">Hindi voice:</span>
         {VOICES.map((v) => {
           const isActive = preferredVoice === v.name;
           return (
             <button
               key={v.name}
               type="button"
+              aria-pressed={isActive}
               onClick={() => setPreferredVoice(v.name)}
+              title={v.tagline}
               className={cn(
-                "flex-1 flex flex-col items-center gap-0.5 rounded-xl border py-2 px-1.5 transition-all duration-200 text-center",
+                "rounded-md border px-2.5 py-1 transition-colors",
                 isActive
-                  ? "bg-primary/10 border-primary text-primary shadow-sm"
-                  : "bg-card border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "border-primary bg-primary/10 font-semibold text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
-              {/* Gender avatar */}
-              <span className="text-base leading-none" aria-hidden="true">
-                {v.gender === "female" ? "👩" : "👨"}
-              </span>
-              <span className={cn("text-[11px] font-bold leading-tight", isActive && "text-primary")}>
-                {v.name}
-              </span>
-              <span className="text-[9px] leading-tight opacity-70">{v.tagline}</span>
+              {v.name}
+              <span className="ml-1.5 hidden text-xs font-normal text-muted-foreground sm:inline">{v.tagline}</span>
             </button>
           );
         })}
       </div>
-    </div>
+    </fieldset>
   );
 }

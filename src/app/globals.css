@@ -2,67 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * SwasthyaAI palette
+ *   Neel ink   #2B3A99  — primary, trust, links
+ *   Paper      #F4F6FA  — cool page ground
+ *   Haldi      #F2B705  — single accent (selection, active markers)
+ *   Sindoor    #C62828  — emergency only
+ *   Neem       #2F7D4F  — low-risk / safe
+ */
 @layer base {
   :root {
-    --background: 180 20% 98%;      /* Very clean, slight-teal white */
-    --foreground: 222.2 84% 4.9%;
+    --background: 220 33% 97%;
+    --foreground: 231 49% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 231 49% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 231 49% 15%;
 
-    --primary: 172.4 66% 36.3%;     /* Medical Teal */
-    --primary-foreground: 210 40% 98%;
+    --primary: 232 56% 38%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 225 35% 93%;
+    --secondary-foreground: 231 49% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 225 30% 93%;
+    --muted-foreground: 229 16% 38%;
 
-    --accent: 199 89% 48%;          /* Healthcare Cyan/Blue */
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 45 96% 48%;
+    --accent-foreground: 231 49% 15%;
 
-    --destructive: 0 84.2% 60.2%;   /* Crisis emergency red */
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 66% 47%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 172.4 66% 36.3%;
+    --safe: 145 45% 32%;
+    --caution: 36 90% 40%;
+    --warning: 22 85% 45%;
 
-    --radius: 0.75rem;
+    --border: 225 25% 86%;
+    --input: 225 25% 80%;
+    --ring: 232 56% 38%;
+
+    --radius: 0.875rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;   /* Deep space blue-black */
-    --foreground: 210 40% 98%;
+    --background: 233 55% 10%;
+    --foreground: 228 40% 93%;
 
-    --card: 222.2 84% 6%;
-    --card-foreground: 210 40% 98%;
+    --card: 233 45% 14%;
+    --card-foreground: 228 40% 93%;
 
-    --popover: 222.2 84% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 233 45% 14%;
+    --popover-foreground: 228 40% 93%;
 
-    --primary: 172.4 66% 45%;       /* Vibrant Teal in Dark Mode */
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 232 85% 78%;
+    --primary-foreground: 233 55% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 233 35% 20%;
+    --secondary-foreground: 228 40% 93%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 233 35% 18%;
+    --muted-foreground: 229 22% 70%;
 
-    --accent: 199 89% 55%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 45 96% 55%;
+    --accent-foreground: 233 55% 10%;
 
-    --destructive: 0 62.8% 30.6%;   /* Dark Red alert */
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 56%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 172.4 66% 45%;
+    --safe: 145 45% 55%;
+    --caution: 40 90% 58%;
+    --warning: 24 90% 60%;
+
+    --border: 233 30% 24%;
+    --input: 233 30% 30%;
+    --ring: 232 85% 78%;
   }
 }
 
@@ -70,23 +86,40 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+  h1, h2, h3, h4 {
+    @apply font-heading;
+    text-wrap: balance;
+  }
+  ::selection {
+    background: hsl(var(--accent) / 0.45);
+    color: hsl(var(--foreground));
+  }
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
 }
 
-/* Glassmorphism custom classes */
-.glass {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+@layer components {
+  /* Thin, quiet scrollbars for the chat log */
+  .scroll-quiet {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
 }
 
-.dark .glass {
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

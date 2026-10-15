@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Phone, Hospital, Navigation, CheckCircle2 } from "lucide-react";
+import { Phone, Navigation, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GoogleMap, useJsApiLoader, DirectionsRenderer } from "@react-google-maps/api";
 
@@ -18,6 +18,9 @@ interface HospitalMapProps {
     hasEmergency24_7: boolean;
     matchesSpecialty?: boolean;
   }>;
+  /** "stacked" (default): map above list, compact — used inside chat replies.
+   *  "split": list beside a taller sticky map on wide screens — used on /hospitals. */
+  layout?: "stacked" | "split";
 }
 
 declare global {
@@ -26,7 +29,7 @@ declare global {
   }
 }
 
-export default function HospitalMap({ userLocation, hospitals }: HospitalMapProps) {
+export default function HospitalMap({ userLocation, hospitals, layout = "stacked" }: HospitalMapProps) {
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   // Activate Google Maps if key is configured and is not the placeholder template
   const hasGoogleMaps = 
@@ -139,25 +142,25 @@ export default function HospitalMap({ userLocation, hospitals }: HospitalMapProp
     // Zoom control at bottom right
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
-    // Custom Icon for User (pulsing teal dot)
+    // Custom Icon for User (pulsing haldi halo around an indigo dot)
     const userIcon = L.divIcon({
       className: "custom-user-marker",
       html: `
         <div class="relative flex h-5 w-5 items-center justify-center">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-teal-500 border-2 border-white shadow"></span>
+          <span class="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F2B705] opacity-60"></span>
+          <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#2B3A99] border-2 border-white shadow"></span>
         </div>
       `,
       iconSize: [20, 20],
       iconAnchor: [10, 10],
     });
 
-    // Custom Icon for Hospital (rose cross pin)
+    // Custom Icon for Hospital (indigo pin; darker when it matches the symptoms)
     const hospitalIcon = (isSpecialized: boolean) => L.divIcon({
       className: "custom-hospital-marker",
       html: `
         <div class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white shadow-lg transition-transform hover:scale-110 duration-200 cursor-pointer ${
-          isSpecialized ? "bg-teal-600 text-white" : "bg-rose-500 text-white"
+          isSpecialized ? "bg-[#2B3A99] text-white" : "bg-[#5A6386] text-white"
         }">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 10.5V20a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-9.5"/>
@@ -189,11 +192,11 @@ export default function HospitalMap({ userLocation, hospitals }: HospitalMapProp
 
       const popupContent = `
         <div class="p-1 min-w-[140px] text-foreground font-sans">
-          <div class="font-bold text-xs leading-tight text-slate-800">${h.name}</div>
-          <div class="text-[10px] text-slate-500 mt-0.5 leading-tight">${h.address}</div>
-          <div class="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 text-[10px]">
-            <span class="font-bold text-teal-600">${h.distance} km away</span>
-            ${h.hasEmergency24_7 ? `<span class="bg-red-500/10 text-red-500 text-[8px] font-bold px-1 rounded">24/7 ER</span>` : ""}
+          <div class="font-semibold text-sm leading-tight text-foreground">${h.name}</div>
+          <div class="text-xs text-muted-foreground mt-0.5 leading-tight">${h.address}</div>
+          <div class="flex items-center justify-between mt-2 pt-1 border-t text-xs">
+            <span class="font-semibold text-primary">${h.distance} km away</span>
+            ${h.hasEmergency24_7 ? `<span class="text-destructive font-semibold">24/7 emergency</span>` : ""}
           </div>
         </div>
       `;
@@ -205,7 +208,7 @@ export default function HospitalMap({ userLocation, hospitals }: HospitalMapProp
       ];
 
       L.polyline(routePoints, {
-        color: h.matchesSpecialty ? "#0d9488" : "#f43f5e",
+        color: h.matchesSpecialty ? "#2B3A99" : "#8A93B8",
         weight: h.matchesSpecialty ? 3.5 : 2,
         opacity: h.matchesSpecialty ? 0.85 : 0.6,
         dashArray: "6, 8",
@@ -228,49 +231,119 @@ export default function HospitalMap({ userLocation, hospitals }: HospitalMapProp
     };
   }, [leafletLoaded, userLocation, hospitals, hasGoogleMaps]);
 
-  const selectedHospital = hospitals[selectedIdx] || hospitals[0];
+  const isSplit = layout === "split";
+  const mapHeight = isSplit ? 520 : 260;
+
+  const list = (
+    <ol className="divide-y border-y">
+      {hospitals.map((h, idx) => {
+        const selected = selectedIdx === idx;
+        return (
+          <li
+            key={idx}
+            className={cn(
+              "relative py-4 pl-4 pr-1 transition-colors",
+              selected ? "bg-primary/[0.04]" : "hover:bg-muted/50"
+            )}
+          >
+            {selected && <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-primary" />}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedIdx(idx);
+                if (!hasGoogleMaps && mapInstanceRef.current) {
+                  mapInstanceRef.current.setView([h.coordinates.latitude, h.coordinates.longitude], 15);
+                }
+              }}
+              aria-pressed={selected}
+              className="flex w-full items-start justify-between gap-4 text-left"
+            >
+              <span className="min-w-0">
+                <span className="block font-heading text-[17px] font-semibold leading-snug">{h.name}</span>
+                <span className="mt-0.5 block text-sm leading-snug text-muted-foreground">{h.address}</span>
+              </span>
+              <span className="shrink-0 text-right">
+                <span className="block font-heading text-xl font-bold tabular-nums leading-none">{h.distance}</span>
+                <span className="text-xs text-muted-foreground">km</span>
+              </span>
+            </button>
+
+            <div className="mt-2.5 flex flex-wrap gap-1.5 text-xs">
+              {h.hasEmergency24_7 && (
+                <span className="rounded-md bg-destructive/10 px-2 py-0.5 font-semibold text-destructive">24/7 emergency</span>
+              )}
+              {h.matchesSpecialty && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-safe/10 px-2 py-0.5 font-semibold text-safe">
+                  <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> Treats your symptoms
+                </span>
+              )}
+              {h.specialties.map((s) => (
+                <span key={s} className="rounded-md bg-muted px-2 py-0.5 capitalize text-muted-foreground">{s}</span>
+              ))}
+            </div>
+
+            <div className="mt-3 flex gap-2">
+              {h.phone && (
+                <a
+                  href={`tel:${h.phone}`}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border bg-card px-3 text-sm font-medium transition-colors hover:border-primary/50"
+                >
+                  <Phone className="h-3.5 w-3.5" aria-hidden="true" /> Call
+                </a>
+              )}
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${h.coordinates.latitude},${h.coordinates.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+              >
+                <Navigation className="h-3.5 w-3.5" aria-hidden="true" /> Directions
+              </a>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
 
   return (
-    <div className="w-full space-y-4 my-2">
+    <div className={cn("w-full", isSplit ? "grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start" : "space-y-4")}>
       {/* Global Leaflet CSS Styling Fixes */}
       {!hasGoogleMaps && (
         <style dangerouslySetInnerHTML={{ __html: `
           .leaflet-popup-content-wrapper {
-            background: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(8px) !important;
-            border: 1px solid rgba(228, 228, 231, 0.8) !important;
-            border-radius: 12px !important;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-          }
-          .dark .leaflet-popup-content-wrapper {
-            background: rgba(24, 24, 27, 0.95) !important;
-            border-color: rgba(63, 63, 70, 0.8) !important;
-            color: #f4f4f5 !important;
+            background: hsl(var(--card)) !important;
+            color: hsl(var(--card-foreground)) !important;
+            border: 1px solid hsl(var(--border)) !important;
+            border-radius: 10px !important;
+            box-shadow: 0 8px 24px -12px hsl(var(--foreground) / 0.35) !important;
           }
           .leaflet-popup-content {
-            margin: 8px 12px !important;
+            margin: 10px 12px !important;
             font-family: inherit !important;
           }
           .leaflet-popup-tip {
-            background: rgba(255, 255, 255, 0.95) !important;
-          }
-          .dark .leaflet-popup-tip {
-            background: rgba(24, 24, 27, 0.95) !important;
+            background: hsl(var(--card)) !important;
           }
         `}} />
       )}
 
-      {/* Map Canvas / Google Maps Component Container */}
-      <div className="relative rounded-2xl overflow-hidden border bg-card/60 shadow-md">
+      {/* In split layout the list leads; the map stays in view beside it. */}
+      {isSplit && list}
+
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-xl border bg-muted",
+          isSplit && "lg:sticky lg:top-20"
+        )}
+        style={{ height: mapHeight }}
+      >
         {hasGoogleMaps ? (
           !isGoogleMapsLoaded ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 dark:bg-zinc-900/50 backdrop-blur z-10 space-y-2 h-[260px]">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <span className="text-xs text-muted-foreground font-medium animate-pulse">Loading Google Maps...</span>
-            </div>
+            <MapLoading label="Loading map…" />
           ) : (
             <GoogleMap
-              mapContainerStyle={{ width: "100%", height: "260px" }}
+              mapContainerStyle={{ width: "100%", height: `${mapHeight}px` }}
               center={{ lat: userLocation.latitude, lng: userLocation.longitude }}
               zoom={13}
               options={{
@@ -285,99 +358,22 @@ export default function HospitalMap({ userLocation, hospitals }: HospitalMapProp
           )
         ) : (
           <>
-            {!leafletLoaded && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 dark:bg-zinc-900/50 backdrop-blur z-10 space-y-2 h-[260px]">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="text-xs text-muted-foreground font-medium animate-pulse">Initializing Route Map...</span>
-              </div>
-            )}
-            <div ref={mapRef} className="w-full h-[260px] z-0" />
+            {!leafletLoaded && <MapLoading label="Loading map…" />}
+            <div ref={mapRef} className="z-0 h-full w-full" />
           </>
         )}
       </div>
 
-      {/* Hospital List Display */}
-      <div className="grid gap-2.5">
-        {hospitals.map((h, idx) => (
-          <div
-            key={idx}
-            className={cn(
-              "p-3 rounded-xl border transition-all duration-300 relative overflow-hidden group hover:shadow-sm cursor-pointer",
-              h.matchesSpecialty 
-                ? "bg-teal-500/5 border-teal-500/30 dark:bg-teal-950/10 dark:border-teal-900/30" 
-                : "bg-card/40 border-border",
-              selectedIdx === idx && "ring-2 ring-primary bg-primary/5 dark:bg-primary/5 border-primary/45"
-            )}
-            onClick={() => setSelectedIdx(idx)}
-          >
-            {/* Header Area */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex gap-2 items-start">
-                <Hospital className={cn("h-4.5 w-4.5 shrink-0 mt-0.5", h.matchesSpecialty ? "text-teal-600 dark:text-teal-400" : "text-muted-foreground")} />
-                <div>
-                  <h4 className="text-xs font-bold text-foreground leading-tight">{h.name}</h4>
-                  <p className="text-[10px] text-muted-foreground leading-tight mt-1">{h.address}</p>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <span className="text-xs font-bold text-teal-600 dark:text-teal-400 block">{h.distance} km</span>
-                <span className="text-[9px] text-muted-foreground">distance</span>
-              </div>
-            </div>
+      {!isSplit && list}
+    </div>
+  );
+}
 
-            {/* Specialties Badges & Action info */}
-            <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-2.5 border-t border-dashed border-border/80">
-              <div className="flex flex-wrap gap-1">
-                {h.specialties.map((s, sIdx) => (
-                  <span
-                    key={sIdx}
-                    className={cn(
-                      "text-[8px] font-bold px-1.5 py-0.5 rounded capitalize",
-                      s.toLowerCase() === "dengue" || s.toLowerCase() === "malaria" || s.toLowerCase() === "tuberculosis" || s.toLowerCase() === "stroke" || s.toLowerCase() === "emergency"
-                        ? "bg-red-500/10 text-red-500 dark:bg-red-950/20"
-                        : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-
-              {/* Specialization Badge Alert */}
-              {h.matchesSpecialty && (
-                <div className="flex items-center gap-1 text-[8px] font-extrabold text-teal-600 dark:text-teal-400">
-                  <CheckCircle2 className="h-3 w-3" />
-                  <span>SPECIALIZED CENTER</span>
-                </div>
-              )}
-            </div>
-
-            {/* Interactive Call & Direction buttons */}
-        
-            <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
-              <a
-                href={`tel:${h.phone}`}
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border glass text-[10px] font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-200"
-              >
-                <Phone className="h-3 w-3" />
-                <span>Call Center</span>
-              </a>
-              <button
-                onClick={() => {
-                  setSelectedIdx(idx);
-                  if (!hasGoogleMaps && mapInstanceRef.current) {
-                    mapInstanceRef.current.setView([h.coordinates.latitude, h.coordinates.longitude], 15);
-                  }
-                }}
-                className="flex items-center justify-center gap-1 py-1.5 px-3.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-[10px] font-semibold transition-all duration-200"
-              >
-                <Navigation className="h-3 w-3" />
-                <span>Locate</span>
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+function MapLoading({ label }: { label: string }) {
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-muted">
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <span className="text-sm text-muted-foreground">{label}</span>
     </div>
   );
 }

@@ -1,24 +1,30 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldAlert, ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground p-6 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 mb-4 animate-bounce">
-        <ShieldAlert className="h-8 w-8" />
+    <div className="flex min-h-screen flex-col justify-center bg-background px-6 text-foreground">
+      <div className="mx-auto w-full max-w-xl">
+        <p className="font-heading text-8xl font-extrabold leading-none text-accent">404</p>
+        <h1 className="mt-4 text-3xl font-bold sm:text-4xl">This page doesn&apos;t exist</h1>
+        <p className="mt-3 text-lg leading-relaxed text-muted-foreground">
+          The link may be old or mistyped. If you need medical help right now, call 108.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            href="/"
+            className="inline-flex h-11 items-center rounded-lg bg-primary px-5 text-[15px] font-semibold text-primary-foreground"
+          >
+            Go to home page
+          </Link>
+          <a
+            href="tel:108"
+            className="inline-flex h-11 items-center rounded-lg border-2 border-destructive/40 px-5 text-[15px] font-semibold text-destructive"
+          >
+            Call 108
+          </a>
+        </div>
       </div>
-      <h1 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">Page Not Found</h1>
-      <p className="text-sm text-muted-foreground mt-2 max-w-md">
-        The healthcare resource you are looking for does not exist or has been moved.
-      </p>
-      <Link
-        href="/"
-        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Return to Dashboard
-      </Link>
     </div>
   );
 }
